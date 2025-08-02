@@ -21,142 +21,118 @@ namespace TextGameEngine.Env
             this.canKill = false;
             this.preventKill = new List<string> ();
             this.KillMsg = string.Empty;
+            this.NonPlayerCharacters = new List<NonPlayerCharacter> ();
+            this.LocationTag = "Location: ";
+            this.NPCsTag = "People in Room: ";
+            this.ItemsTag = "Items: ";
+            this.DescTag = string.Empty;
+            this.ExitTag = "Exits: ";
         }
-
-        public Room(List<Exit>  exits)
+        public Room(List<NonPlayerCharacter> NPCs) : this()
+        {
+            this.NonPlayerCharacters = NPCs;
+        }
+        public Room(List<Exit>  exits) : this()
         {
             this.Exits = exits;
-            this.FloorItems = new List<Item>();
-            this.Description = string.Empty;
-            this.RoomCode = string.Empty;
-            this.Name = string.Empty;
-            this.RoomCodePrivate = string.Empty;
-            this.canKill = false;
-            this.preventKill = new List<string>();
-            this.KillMsg = string.Empty;
         }
 
-
-        public Room(List<Item> items)
+        public Room(List<Exit> exits, List<NonPlayerCharacter> NPCs) :this(exits)
         {
-            this.Exits = new List<Exit> ();
-            this.FloorItems = items;
-            this.Description = string.Empty;
-            this.RoomCode = string.Empty;
-            this.Name = string.Empty;
-            this.RoomCodePrivate = string.Empty;
-            this.canKill = false;
-            this.KillMsg = string.Empty;
-            this.preventKill = new List<string>();
+            this.NonPlayerCharacters = NPCs;
         }
 
-        public Room(List<Exit>  Exits, List<Item> Items)
+
+        public Room(List<Item> items) : this()
+        {
+            this.FloorItems = items;
+        }
+        public Room(List<Item> items, List<NonPlayerCharacter> NPCs) : this(items)
+        {
+            this.NonPlayerCharacters = NPCs;
+        }
+        public Room(List<Exit>  Exits, List<Item> Items) :this()
         {
             this.Exits = Exits;
             this.FloorItems = Items;
-            this.Description = string.Empty;
-            this.RoomCode = string.Empty;
-            this.Name = string.Empty;
-            this.RoomCodePrivate = string.Empty;
-            this.canKill = false;
-            this.KillMsg = string.Empty;
-            this.preventKill = new List<string>();
         }
 
-        public Room(string code)
+        public Room(List<Exit> Exits, List<Item> Items, List<NonPlayerCharacter> NPCs) : this(Exits,Items)
         {
-            this.Exits = new List<Exit> ();
-            this.FloorItems = new List<Item>();
-            this.Description = string.Empty;
+            this.NonPlayerCharacters = NPCs;
+        }
+        public Room(string code) : this()
+        {
             this.RoomCode = code;
-            this.Name = string.Empty;
+        }
+
+        public Room(string code, List<NonPlayerCharacter> NPCs) : this(code)
+        {
+            this.NonPlayerCharacters = NPCs;
+        }
+
+        public Room(string code, string name)  :this()
+        {
+            this.RoomCode = code;
             this.RoomCodePrivate = this.RoomCode.ToUpper();
-            this.KillMsg = string.Empty;
-            this.canKill = false;
-            this.preventKill = new List<string>();
-        }
-
-        public Room(string code, string name) 
-        {
-            this.Exits = new List<Exit> ();
-            this.FloorItems = new List<Item>();
-            this.Description = string.Empty;
-            this.RoomCode = code;
             this.Name = name;
-            this.RoomCodePrivate = this.RoomCode.ToUpper();
-            this.canKill = false;
-            this.KillMsg = string.Empty;
-            this.preventKill = new List<string>();
+        }
+        public Room(string code, string name, List<NonPlayerCharacter> NPCs) : this(code,name)
+        {
+            this.NonPlayerCharacters = NPCs;
         }
 
-        public Room(string code,string name,string desc)
+        public Room(string code,string name,string desc) :this(code, name)
         {
-            this.Exits = new List<Exit> ();
-            this.FloorItems = new List<Item>();
             this.Description = desc;
-            this.RoomCode = code;
-            this.Name = name;
-            this.RoomCodePrivate = this.RoomCode.ToUpper();
-            this.canKill = false;
-            this.KillMsg = string.Empty;
-            this.preventKill = new List<string>();
-
         }
-        public Room(string code, string name, string desc,List<Exit> exits,List<Item> floorItems)
+        public Room(string code, string name, string desc, List<NonPlayerCharacter> NPCs) : this(code, name,desc)
+        {
+            this.NonPlayerCharacters = NPCs;
+        }
+
+        public Room(string code, string name, string desc,List<Exit> exits,List<Item> floorItems) :this(code, name, desc)
         {
             this.Exits = exits;
             this.FloorItems = floorItems;
-            this.Description = desc;
-            this.RoomCode = code;
-            this.Name = name;
-            this.RoomCodePrivate = this.RoomCode.ToUpper();
-            this.canKill = false;
-            this.preventKill = new List<string>();
-            this.KillMsg = string.Empty;
+        }
+        public Room(string code, string name, string desc, List<Exit> exits, List<Item> floorItems, List<NonPlayerCharacter> NPCs) : this(code, name, desc,floorItems)
+        {
+            this.NonPlayerCharacters = NPCs;
         }
 
-        public Room(string code, string name, string desc,List<Exit> exits)
+        public Room(string code, string name, string desc,List<Exit> exits) :this(code, name, desc) 
         {
             this.Exits = exits;
-            this.FloorItems = new List<Item>();
-            this.Description = desc;
-            this.RoomCode = code;
-            this.Name = name;
-            this.RoomCodePrivate = this.RoomCode.ToUpper();
-            this.canKill = false;
-            this.preventKill = new List<string>();
-            this.KillMsg = string.Empty;
         }
-        public Room(string code, string name, string desc,List<Item> floorItems)
+        public Room(string code, string name, string desc, List<Exit> exits, List<NonPlayerCharacter> NPCs) : this(code, name, desc, exits)
         {
-            this.Exits = new List<Exit>();
+            this.NonPlayerCharacters = NPCs;
+        }
+        public Room(string code, string name, string desc,List<Item> floorItems) : this(code, name, desc) 
+        {
             this.FloorItems = floorItems;
-            this.Description = desc;
-            this.RoomCode = code;
-            this.Name = name;
-            this.RoomCodePrivate = this.RoomCode.ToUpper();
-            this.canKill = false;
-            this.preventKill = new List<string>();
-            this.KillMsg = string.Empty;
+        }
+        public Room(string code, string name, string desc, List<Item> floorItems, List<NonPlayerCharacter> NPCs) : this(code, name, desc,floorItems)
+        {
+            this.NonPlayerCharacters = NPCs;
+        }
 
-        }
-        public Room(string code, string name, string desc, List<Exit> exits, List<Item> floorItems,bool canKill, List<string> preventKill, string killMsg)
+        public Room(string code, string name, string desc, List<Exit> exits, List<Item> floorItems,bool canKill, List<string> preventKill, string killMsg): this(code, name, desc, exits, floorItems)
         {
-            this.Exits = exits;
-            this.FloorItems = floorItems;
-            this.Description = desc;
-            this.RoomCode = code;
-            this.Name = name;
-            this.RoomCodePrivate = this.RoomCode.ToUpper();
             this.canKill = canKill;
             this.preventKill = preventKill;
             this.KillMsg = killMsg;
+        }
+        public Room(string code, string name, string desc, List<Exit> exits, List<Item> floorItems, bool canKill, List<string> preventKill, string killMsg, List<NonPlayerCharacter> NPCs) : this(code, name, desc, exits, floorItems,canKill, preventKill,killMsg)
+        {
+            this.NonPlayerCharacters = NPCs;
         }
 
 
         #endregion
 
-        #region Data - Public
+            #region Data - Public
         public string RoomCode { get { return this.RoomCodePrivate; } set { this.RoomCodePrivate = value.ToUpper(); } }
         private string RoomCodePrivate { get; set; }
         public string Name { get; set; }
@@ -167,7 +143,12 @@ namespace TextGameEngine.Env
         public bool canKill {  get; set; }
         public List<string> preventKill { get; set; }
         public string KillMsg {  get; set; }
-
+        public List<NonPlayerCharacter> NonPlayerCharacters { get; set; }
+        public string LocationTag { get; set; }
+        public string DescTag { get; set; }
+        public string ItemsTag { get; set; }
+        public string NPCsTag { get; set; }
+        public string ExitTag { get; set; }
         #endregion
 
         #region Setters and Getters
@@ -216,7 +197,7 @@ namespace TextGameEngine.Env
         #endregion
         #region Printers
         //prints
-        public string PrintExits()
+        private string PrintExits()
         {
             StringBuilder sb = new StringBuilder();
             foreach(var exit in this.Exits)
@@ -235,7 +216,7 @@ namespace TextGameEngine.Env
             return sb.ToString();
         }
 
-        public string PrintFloorItems()
+        private string PrintFloorItems()
         {
             StringBuilder sb = new StringBuilder();
             foreach (var item in this.FloorItems)
@@ -253,53 +234,50 @@ namespace TextGameEngine.Env
             return sb.ToString();
         }
 
+        private string PrintNPCs()
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var npc in this.NonPlayerCharacters)
+            {
+                if (sb.Length == 0)
+                {
+                    sb.Append(npc.Name);
+                }
+                else
+                {
+                    sb.Append(", " + npc.Name);
+                }
+            }
+            sb.Append(".");
+            return sb.ToString();
+        }
         public string PrintRoom()
         {
             StringBuilder sb = new StringBuilder();
             if (string.IsNullOrWhiteSpace(this.Name) == false)
             {
-                sb.AppendLine("Location: " + this.Name);
+                sb.AppendLine(this.LocationTag + this.Name);
                 sb.AppendLine();
             }
             if (string.IsNullOrWhiteSpace(this.Description) == false)
             {
-                sb.AppendLine(this.Description);
+                sb.AppendLine(this.DescTag + this.Description);
+                sb.AppendLine();
+            }
+            if (this.NonPlayerCharacters.Count > 0)
+            {
+                sb.AppendLine(this.NPCsTag + PrintNPCs());
                 sb.AppendLine();
             }
             if (this.FloorItems.Count > 0)
             {
-                sb.AppendLine("Items: " + this.PrintFloorItems());
+                sb.AppendLine(this.ItemsTag + this.PrintFloorItems());
                 sb.AppendLine();
             }
             if (this.Exits.Count > 0)
             {
-                sb.AppendLine("Exits: " + this.PrintExits());
+                sb.AppendLine(this.ExitTag + this.PrintExits());
             }
-            return sb.ToString().Trim();
-        }
-        public string PrintRoom(string locationTag = "",string descTag = "", string itemsTag = "", string exitTag = "")
-        {
-            StringBuilder sb = new StringBuilder();
-            if (string.IsNullOrWhiteSpace(this.Name) == false)
-            {
-                sb.AppendLine(locationTag + this.Name);
-                sb.AppendLine();
-            }
-            if (string.IsNullOrWhiteSpace(this.Description) == false)
-            {
-                sb.AppendLine(descTag + this.Description);
-                sb.AppendLine();
-            }
-            if (this.FloorItems.Count > 0)
-            {
-                sb.AppendLine(itemsTag + this.PrintFloorItems());
-                sb.AppendLine();
-            }
-            if (this.Exits.Count > 0)
-            {
-                sb.AppendLine(exitTag + this.PrintExits());
-            }
-            sb.AppendLine();
             return sb.ToString();
         }
         #endregion

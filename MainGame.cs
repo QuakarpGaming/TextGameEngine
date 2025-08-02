@@ -3,13 +3,13 @@ using TextGameEngine.Game;
 
 var game = new TheGame();
 
-game.WinningRoomCode = "ICR1";
-game.WinningMsg = "You Entered the cave with a torch, praise be unto you, for Completing this very hard task!";
+//game.WinningRoomCode = "ICR1";
+//game.WinningMsg = "You Entered the cave with a torch, praise be unto you, for Completing this very hard task!";
 
 game.Rooms.Add(new Room()
 {
     Name = "Outside the Cave",
-    RoomCode = "OTC",
+    RoomCode = "OUTSIDE THE CAVE",
     Description = "You have finally arrived at the cave where there is a Hag that has your sister. It is just an unassuming hole in the wall, that is too dark to see into.",
     Exits = new List<Exit> { new Exit()
     {
@@ -23,7 +23,8 @@ game.Rooms.Add(new Room()
     {
         Code = "TORCH",
         Description = "A long stick with a rag soak in oil. Great for cave exploration!"
-    }}
+    }},
+    NonPlayerCharacters = new List<NonPlayerCharacter> { new NonPlayerCharacter() { Name = "John Smith", Description = "Smells like a hag.", Inventory = new List<Item>() { new Item() { Code = "GUN", Description = "L shaped pew pew." ,CanKill = true,KillMsg="Why did you try and get a gun from someones waist? ARE YOU A FOOL. MR T pities you."} } } }
 });
 
 game.Rooms.Add(new Room()
@@ -35,8 +36,8 @@ game.Rooms.Add(new Room()
         new Exit()
         {
             IsLocked = false,
-            ToRoomCode = "OTC",
-            ToRoomDiscription = "OUTSIDE",
+            ToRoomCode = "OUTSIDE THE CAVE",
+            ToRoomDiscription = "OUTSIDE THE CAVE",
         },
         new Exit()
         {
@@ -89,7 +90,7 @@ game.Rooms.Add(new Room()
     },
 });
 
-game.CurrentRoomCode = "OTC";
+game.CurrentRoomCode = "OUTSIDE THE CAVE";
 
 game.GamePlayLoop();
 
