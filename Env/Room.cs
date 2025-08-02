@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,7 +18,9 @@ namespace TextGameEngine.Env
             this.RoomCode = string.Empty;
             this.Name = string.Empty;
             this.RoomCodePrivate = string.Empty;
-
+            this.canKill = false;
+            this.preventKill = new List<string> ();
+            this.KillMsg = string.Empty;
         }
 
         public Room(List<Exit>  exits)
@@ -27,8 +30,10 @@ namespace TextGameEngine.Env
             this.Description = string.Empty;
             this.RoomCode = string.Empty;
             this.Name = string.Empty;
-
             this.RoomCodePrivate = string.Empty;
+            this.canKill = false;
+            this.preventKill = new List<string>();
+            this.KillMsg = string.Empty;
         }
 
 
@@ -40,8 +45,9 @@ namespace TextGameEngine.Env
             this.RoomCode = string.Empty;
             this.Name = string.Empty;
             this.RoomCodePrivate = string.Empty;
-
-
+            this.canKill = false;
+            this.KillMsg = string.Empty;
+            this.preventKill = new List<string>();
         }
 
         public Room(List<Exit>  Exits, List<Item> Items)
@@ -52,8 +58,9 @@ namespace TextGameEngine.Env
             this.RoomCode = string.Empty;
             this.Name = string.Empty;
             this.RoomCodePrivate = string.Empty;
-
-
+            this.canKill = false;
+            this.KillMsg = string.Empty;
+            this.preventKill = new List<string>();
         }
 
         public Room(string code)
@@ -64,7 +71,9 @@ namespace TextGameEngine.Env
             this.RoomCode = code;
             this.Name = string.Empty;
             this.RoomCodePrivate = this.RoomCode.ToUpper();
-
+            this.KillMsg = string.Empty;
+            this.canKill = false;
+            this.preventKill = new List<string>();
         }
 
         public Room(string code, string name) 
@@ -75,7 +84,9 @@ namespace TextGameEngine.Env
             this.RoomCode = code;
             this.Name = name;
             this.RoomCodePrivate = this.RoomCode.ToUpper();
-
+            this.canKill = false;
+            this.KillMsg = string.Empty;
+            this.preventKill = new List<string>();
         }
 
         public Room(string code,string name,string desc)
@@ -86,6 +97,9 @@ namespace TextGameEngine.Env
             this.RoomCode = code;
             this.Name = name;
             this.RoomCodePrivate = this.RoomCode.ToUpper();
+            this.canKill = false;
+            this.KillMsg = string.Empty;
+            this.preventKill = new List<string>();
 
         }
         public Room(string code, string name, string desc,List<Exit> exits,List<Item> floorItems)
@@ -96,7 +110,9 @@ namespace TextGameEngine.Env
             this.RoomCode = code;
             this.Name = name;
             this.RoomCodePrivate = this.RoomCode.ToUpper();
-
+            this.canKill = false;
+            this.preventKill = new List<string>();
+            this.KillMsg = string.Empty;
         }
 
         public Room(string code, string name, string desc,List<Exit> exits)
@@ -107,7 +123,9 @@ namespace TextGameEngine.Env
             this.RoomCode = code;
             this.Name = name;
             this.RoomCodePrivate = this.RoomCode.ToUpper();
-
+            this.canKill = false;
+            this.preventKill = new List<string>();
+            this.KillMsg = string.Empty;
         }
         public Room(string code, string name, string desc,List<Item> floorItems)
         {
@@ -117,6 +135,22 @@ namespace TextGameEngine.Env
             this.RoomCode = code;
             this.Name = name;
             this.RoomCodePrivate = this.RoomCode.ToUpper();
+            this.canKill = false;
+            this.preventKill = new List<string>();
+            this.KillMsg = string.Empty;
+
+        }
+        public Room(string code, string name, string desc, List<Exit> exits, List<Item> floorItems,bool canKill, List<string> preventKill, string killMsg)
+        {
+            this.Exits = exits;
+            this.FloorItems = floorItems;
+            this.Description = desc;
+            this.RoomCode = code;
+            this.Name = name;
+            this.RoomCodePrivate = this.RoomCode.ToUpper();
+            this.canKill = canKill;
+            this.preventKill = preventKill;
+            this.KillMsg = killMsg;
         }
 
 
@@ -130,7 +164,9 @@ namespace TextGameEngine.Env
         public List<Exit> Exits { get; set; }
 
         public List<Item> FloorItems { get; set; }
-        
+        public bool canKill {  get; set; }
+        public List<string> preventKill { get; set; }
+        public string KillMsg {  get; set; }
 
         #endregion
 
@@ -175,6 +211,9 @@ namespace TextGameEngine.Env
         }
         #endregion
 
+        #region Death and Taxes
+
+        #endregion
         #region Printers
         //prints
         public string PrintExits()

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -24,11 +25,18 @@ namespace TextGameEngine.Game
             this.PickUpItemRegex = new Regex("^GET$|^TAKE$|^PICKUP$|^LOOT$|^STEAL$");
             this.DroppedItemRegex = new Regex("^DROP$|^PLACE$|^REMOVE$|^THROW$|^ABANDON$");
             this.QuitRegex = new Regex("^QUIT$|^DESKTOP$|^ALT-F4$");
+            this.InvRegex = new Regex("^INV$|^INVENTORY$|^POCKETS$|^BACKPACK$");
             this.PickedUpItemMsg = "You picked up the {item}.";
             this.DroppedItemMsg = "You drop the {item}.";
             this.MissPickUpMsg = "There Is no {item} in this room.";
             this.missDropMsg = "You do not have {item} to drop.";
             this.PrintRoomDuringLoop = true;
+            this.WinningRoomCodePrivate = string.Empty;
+            this.WinningItems = new List<Item>();
+            this.GameState = "CONT";
+            this.WhatKilledCode = string.Empty;
+            this.WhereKilledCode = string.Empty;
+            this.WinningMsg = string.Empty;
         }
         #endregion
 
@@ -50,7 +58,17 @@ namespace TextGameEngine.Game
         public Regex PickUpItemRegex { get; set; }
         public Regex DroppedItemRegex { get; set; }
         public Regex QuitRegex { get; set; }
+        public Regex InvRegex { get; set; }
         private bool PrintRoomDuringLoop { get; set; }
+
+        private string WinningRoomCodePrivate { get; set; }
+        public string WinningRoomCode { get { return this.WinningRoomCodePrivate; } set { this.WinningRoomCodePrivate = value.ToUpper(); } }
+
+        public List<Item> WinningItems { get; set; }
+        public string GameState { get; set; }
+        private string WhereKilledCode { get; set; }
+        private string WhatKilledCode { get; set; }
+        public string WinningMsg { get; set; }
         #endregion
 
         #region Game Play Functions
@@ -81,7 +99,7 @@ namespace TextGameEngine.Game
                         }
                     }
                 }
-                else 
+                else
                 {
                     this.Errors.Add("{not_found}");
                 }
@@ -94,6 +112,29 @@ namespace TextGameEngine.Game
             if(this.Errors.Count == 0)
             {
                 this.CurrentRoomCode = codeToMoveTo;
+                var newRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == codeToMoveTo);
+                if (newRoom != null && newRoom.canKill)
+                {
+                    if (newRoom.preventKill.Count == 0)
+                    {
+                        this.GameState = "DEAD";
+                    }
+                    else
+                    {
+                        var newGameState = "DEAD";
+                        foreach (var item in newRoom.preventKill)
+                        {
+                            if (PlayInv.Any(x => x.Code == item))
+                            {
+                                newGameState = "CONT";
+                                break;
+                            }
+                        }
+                        this.GameState = newGameState;
+
+                        this.WhereKilledCode = newGameState == "DEAD" ? codeToMoveTo : string.Empty;
+                    }
+                }
             }
 
             return this.Errors.Count == 0;
@@ -145,6 +186,29 @@ namespace TextGameEngine.Game
                     PlayInv.Add(item);
                     currentRoom.FloorItems.Remove(item);
                     Console.WriteLine(PickedUpItemMsg.Replace("{item}",item.Code));
+                    if (item.CanKill)
+                    {
+                        var newGameState = "DEAD";
+                        if (item.PreventKill.Count == 0)
+                        {
+                            WhatKilledCode = item.Code;
+                        }
+                        else
+                        {
+                            newGameState = "DEAD";
+                            foreach (var itemCode in item.PreventKill)
+                            {
+                                if (PlayInv.Any(x => x.Code == itemCode))
+                                {
+                                    newGameState = "CONT";
+                                    break;
+                                }
+                            }
+
+                            this.GameState = newGameState;
+                            this.WhatKilledCode = newGameState == "DEAD" ? item.Code : string.Empty;
+                        }
+                    }
                 }
                 else
                 {
@@ -175,7 +239,7 @@ namespace TextGameEngine.Game
         #endregion
 
         #region Input
-        public string[] GetInput()
+        private string[] GetInput()
         {
             var isValid = false;
             string[] input = new string[2];
@@ -190,7 +254,7 @@ namespace TextGameEngine.Game
             return input;
         }
 
-        public void ActInput(string[] input)
+        private void ActInput(string[] input)
         {
             if (input.Length >= 2)
             {
@@ -223,6 +287,7 @@ namespace TextGameEngine.Game
                 {
                     DropItem(input[1]);
                 }
+
             }
             else if(input.Length == 1)
             {
@@ -230,7 +295,87 @@ namespace TextGameEngine.Game
                 {
                     PrintCurrentRoom();
                 }
+                else if (InvRegex.IsMatch(input[0]))
+                {
+                    PrintPlayerInv();
+                }
             }
+        }
+        #endregion
+
+        #region Death and Taxes
+        private string CheckGameState()
+        {
+            if(GameState == "DEAD")
+                return GameState; 
+            
+            if (CurrentRoomCode == WinningRoomCodePrivate)
+            {
+                foreach(var item in this.WinningItems)
+                {
+                    if (PlayInv.Any(x => x.Code == item.Code) == false)
+                        return "CONT";
+                }
+                return "WIN";
+            }
+
+            return "CONT";
+        }
+
+        private bool BreakGamePlayLoop(string[] input)
+        {
+            var breakLoop = false;
+
+            if(this.GameState == "DEAD" ||  this.GameState =="WIN")
+                breakLoop = true;
+
+            else if (this.QuitRegex.IsMatch(input[0]))
+                breakLoop = true;
+
+
+            return !breakLoop;
+        }
+
+        private void DisplayGameEndMsg()
+        {
+            Console.Clear();
+
+            switch (this.GameState)
+            {
+                case "DEAD":
+                    //tell player
+                    Console.WriteLine("YOU ARE DEAD!\n");
+                    //checking if a room killed you
+                    if (string.IsNullOrWhiteSpace(this.WhereKilledCode) == false)
+                    {
+                        //find room
+                        var killedRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == WhereKilledCode.ToUpper());
+                        if (killedRoom != null)
+                        {
+                            //tell player why they are dead 
+                            Console.WriteLine(killedRoom.KillMsg);
+                        }
+                    }
+                    else if (string.IsNullOrEmpty(this.WhatKilledCode) == false)
+                    {
+                        var killedItem = this.PlayInv.FirstOrDefault(x => x.Code == WhatKilledCode.ToUpper());
+                        if (killedItem != null)
+                        {
+                            Console.WriteLine(killedItem.KillMsg);
+                        }
+                    }
+                    break;
+
+                case "WIN":
+                    Console.WriteLine("YOU WIN!\n");
+                    if (string.IsNullOrWhiteSpace(this.WinningMsg) == false)
+                    {
+                        Console.WriteLine(this.WinningMsg);
+                    }
+                    break;
+            }
+
+            Console.WriteLine("\n\nThank you so much for playing, press the enter key to exit.");
         }
         #endregion
         #endregion
@@ -249,7 +394,11 @@ namespace TextGameEngine.Game
                 }
                 input = GetInput();
                 ActInput(input);
-            }while((input.Length == 0) || (input.Length != 0 && this.QuitRegex.IsMatch(input[0]) == false));
+                this.GameState = CheckGameState();
+                
+            }while(BreakGamePlayLoop(input));
+
+            DisplayGameEndMsg();
         }
         #endregion
 

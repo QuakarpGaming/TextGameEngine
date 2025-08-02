@@ -3,6 +3,9 @@ using TextGameEngine.Game;
 
 var game = new TheGame();
 
+game.WinningRoomCode = "ICR1";
+game.WinningMsg = "You Entered the cave with a torch, praise be unto you, for Completing this very hard task!";
+
 game.Rooms.Add(new Room()
 {
     Name = "Outside the Cave",
@@ -10,7 +13,7 @@ game.Rooms.Add(new Room()
     Description = "You have finally arrived at the cave where there is a Hag that has your sister. It is just an unassuming hole in the wall, that is too dark to see into.",
     Exits = new List<Exit> { new Exit()
     {
-        IsLocked = true,
+        IsLocked = false,
         KeyItemCode = "TORCH",
         ToRoomCode = "ICR1",
         ToRoomDiscription = "CAVE",
@@ -46,9 +49,16 @@ game.Rooms.Add(new Room()
         new Item()
         {
             Code = "ROCK",
-            Description = "This looks like it could do some damage."
+            Description = "This looks like it could do some damage.",
+            CanKill = true,
+            PreventKill = new List<string> {"NOTHING THIS IS FOR TESTING"},
+            KillMsg = "As you pick up the rock you hear a loud CLICK! After that everything went dark."
+            
         }
-    }
+    },
+    canKill = true,
+    preventKill = new List<string>() { "TORCH" },
+    KillMsg = "Well, you went into a cave with no light source. after about 5 seconds in darkness you stub your toe, then face plant in a wall. You are bleeding out from your nose and dead. Maybe next time grab the torch first."
 });
 
 game.Rooms.Add(new Room()
