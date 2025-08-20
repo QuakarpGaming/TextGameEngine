@@ -1,6 +1,6 @@
 ﻿using TextGameEngine.Env;
 using TextGameEngine.Game;
-
+using TextGameEngine.Player;
 var game = new TheGame();
 
 //game.WinningRoomCode = "ICR1";
@@ -24,7 +24,27 @@ game.Rooms.Add(new Room()
         Code = "TORCH",
         Description = "A long stick with a rag soak in oil. Great for cave exploration!"
     }},
-    NonPlayerCharacters = new List<NonPlayerCharacter> { new NonPlayerCharacter() { Name = "John Smith", Description = "Smells like a hag.", Inventory = new List<Item>() { new Item() { Code = "GUN", Description = "L shaped pew pew." ,CanKill = true,KillMsg="Why did you try and get a gun from someones waist? ARE YOU A FOOL. MR T pities you."} } } }
+    NonPlayerCharacters = new List<NonPlayerCharacter>
+                                    {
+                                        new NonPlayerCharacter()
+                                        { Name = "John Smith",
+                                          Description = "Smells like a hag.",
+                                          Inventory = new List<Item>()
+                                                        {
+                                                        new Item() {
+                                                            Code = "GUN",
+                                                            Description = "L shaped pew pew." ,
+                                                            CanKill = true,
+                                                            KillMsg="Why did you try and get a gun from someones waist? ARE YOU A FOOL. MR T pities you."
+                                                            }
+                                                        },
+                                          Responses = new Dictionary<string, string>()
+                                            {
+                                              {"GUN","That is for me to know and you to die over." }
+                                          }
+                                    },
+    }
+    
 });
 
 game.Rooms.Add(new Room()
@@ -92,6 +112,21 @@ game.Rooms.Add(new Room()
 
 game.CurrentRoomCode = "OUTSIDE THE CAVE";
 
-game.GamePlayLoop();
+//game.GamePlayLoop();
+
+
+
+var player = new PlayerClass();
+player.Name = "Ruby Hates Jack, teehee :)";
+
+player.Equipment = new List<Equipment>
+{
+    new Equipment(name:"Sword Of Stabbing +1",type: EquipmentType.Weapon,minDamageBoost:1,maxDamageBoost:1,isEquiped:true ),
+    new Equipment(name:"Sword Of Not Stabbing -2",type:EquipmentType.Weapon,minDamageBoost:-2,maxDamageBoost:-2,isEquiped:false),
+    new Equipment(name:"Sword Of Not Stabbing -1",type:EquipmentType.Weapon,minDamageBoost:-1,maxDamageBoost:-1,isEquiped:false),
+    new Equipment(name:"Helm Of Courage",type:EquipmentType.Head,isEquiped:true, healthBoost:10,hitBoost: -5,dodgeBoost:-5,damageReductionBoost:3)
+
+};
+player.printAll();
 
 Console.ReadLine();

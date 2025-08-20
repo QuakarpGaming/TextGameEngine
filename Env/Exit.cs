@@ -18,28 +18,13 @@ namespace TextGameEngine.Env
             this.ToRoomDiscription = string.Empty;
             this.LockMsg = string.Empty;
         }
-        public Exit(string toRoomCode,string desc)
-        {
-            this.ToRoomCode = toRoomCode;
-            this.KeyItemCode = string.Empty;
-            this.IsLocked = false;
-            this.ToRoomDiscription = desc;
-            this.LockMsg = string.Empty;
-        }
-        public Exit(string toRoomCode, string toRoomDiscription, string keyItemCode, bool isLocked)
+        
+        public Exit(string toRoomCode, string? toRoomDiscription = null, string? keyItemCode = null, bool isLocked = false,string? lockedMsg = null)
         {
             this.ToRoomCode = toRoomCode.ToUpper();
-            this.KeyItemCode = keyItemCode.ToUpper();
+            this.KeyItemCode = keyItemCode?.ToUpper() ?? string.Empty;
             this.IsLocked = isLocked;
-            this.ToRoomDiscription = toRoomDiscription;
-            this.LockMsg = isLocked ? "Locked" : string.Empty;
-        }
-        public Exit(string toRoomCode, string toRoomDiscription, string keyItemCode, bool isLocked,string lockedMsg)
-        {
-            this.ToRoomCode = toRoomCode.ToUpper();
-            this.KeyItemCode = keyItemCode.ToUpper();
-            this.IsLocked = isLocked;
-            this.ToRoomDiscription = toRoomDiscription;
+            this.ToRoomDiscription = toRoomDiscription ?? "A ROOM.";
             if (isLocked)
             {
                 if(string.IsNullOrWhiteSpace(lockedMsg))

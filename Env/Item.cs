@@ -17,25 +17,14 @@ namespace TextGameEngine.Env
             PreventKill = new List<string>();
             KillMsg = string.Empty;
         }
-        public Item(string code, string description)
+        public Item(string code, string? description = null,bool canKill = false,List<string>? preventKill = null ,string? killMsg = null)
         {
             Code = code.ToUpper();
-            Description = description;
-            CodePrivate = this.Code;
-            CanKill = false;
-            PreventKill = new List<string>();
-            KillMsg = string.Empty;
-
-        }
-
-        public Item(string code, string description,bool canKill,List<string> preventKill,string killMsg)
-        {
-            Code = code.ToUpper();
-            Description = description;
+            Description = description ?? string.Empty;
             CodePrivate = this.Code;
             CanKill = canKill;
-            PreventKill = preventKill;
-            KillMsg = killMsg;
+            PreventKill = preventKill ?? [];
+            KillMsg = killMsg ?? "BLARG YOU ARE DEAD!";
         }
 
         #endregion

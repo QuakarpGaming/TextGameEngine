@@ -80,7 +80,7 @@ namespace TextGameEngine.Env
                     sb.Append(", " + item.Code);
                 }
             }
-            sb.Append(".");
+            sb.Append('.');
             return sb.ToString();
         }
         #endregion

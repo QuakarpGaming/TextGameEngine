@@ -28,105 +28,25 @@ namespace TextGameEngine.Env
             this.DescTag = string.Empty;
             this.ExitTag = "Exits: ";
         }
-        public Room(List<NonPlayerCharacter> NPCs) : this()
+        public Room(string code, string name, string? desc = null, List<Exit>? exits = null, List<Item>? floorItems = null, bool canKill = false, List<string>? preventKill = null,
+                    string? killMsg = null, List<NonPlayerCharacter>? NPCs = null,string LocationPrefix = "Location: ", string npcPrefix = "People in Room: ", string itemPrefix = "Items: ", string? desciptionPrefix = null,
+                    string exitPrefix = "Exits: ")
         {
-            this.NonPlayerCharacters = NPCs;
-        }
-        public Room(List<Exit>  exits) : this()
-        {
-            this.Exits = exits;
-        }
-
-        public Room(List<Exit> exits, List<NonPlayerCharacter> NPCs) :this(exits)
-        {
-            this.NonPlayerCharacters = NPCs;
-        }
-
-
-        public Room(List<Item> items) : this()
-        {
-            this.FloorItems = items;
-        }
-        public Room(List<Item> items, List<NonPlayerCharacter> NPCs) : this(items)
-        {
-            this.NonPlayerCharacters = NPCs;
-        }
-        public Room(List<Exit>  Exits, List<Item> Items) :this()
-        {
-            this.Exits = Exits;
-            this.FloorItems = Items;
-        }
-
-        public Room(List<Exit> Exits, List<Item> Items, List<NonPlayerCharacter> NPCs) : this(Exits,Items)
-        {
-            this.NonPlayerCharacters = NPCs;
-        }
-        public Room(string code) : this()
-        {
-            this.RoomCode = code;
-        }
-
-        public Room(string code, List<NonPlayerCharacter> NPCs) : this(code)
-        {
-            this.NonPlayerCharacters = NPCs;
-        }
-
-        public Room(string code, string name)  :this()
-        {
-            this.RoomCode = code;
-            this.RoomCodePrivate = this.RoomCode.ToUpper();
+            this.RoomCode = code.ToUpper();
+            this.RoomCodePrivate = this.RoomCode;
             this.Name = name;
-        }
-        public Room(string code, string name, List<NonPlayerCharacter> NPCs) : this(code,name)
-        {
-            this.NonPlayerCharacters = NPCs;
-        }
-
-        public Room(string code,string name,string desc) :this(code, name)
-        {
-            this.Description = desc;
-        }
-        public Room(string code, string name, string desc, List<NonPlayerCharacter> NPCs) : this(code, name,desc)
-        {
-            this.NonPlayerCharacters = NPCs;
-        }
-
-        public Room(string code, string name, string desc,List<Exit> exits,List<Item> floorItems) :this(code, name, desc)
-        {
-            this.Exits = exits;
-            this.FloorItems = floorItems;
-        }
-        public Room(string code, string name, string desc, List<Exit> exits, List<Item> floorItems, List<NonPlayerCharacter> NPCs) : this(code, name, desc,floorItems)
-        {
-            this.NonPlayerCharacters = NPCs;
-        }
-
-        public Room(string code, string name, string desc,List<Exit> exits) :this(code, name, desc) 
-        {
-            this.Exits = exits;
-        }
-        public Room(string code, string name, string desc, List<Exit> exits, List<NonPlayerCharacter> NPCs) : this(code, name, desc, exits)
-        {
-            this.NonPlayerCharacters = NPCs;
-        }
-        public Room(string code, string name, string desc,List<Item> floorItems) : this(code, name, desc) 
-        {
-            this.FloorItems = floorItems;
-        }
-        public Room(string code, string name, string desc, List<Item> floorItems, List<NonPlayerCharacter> NPCs) : this(code, name, desc,floorItems)
-        {
-            this.NonPlayerCharacters = NPCs;
-        }
-
-        public Room(string code, string name, string desc, List<Exit> exits, List<Item> floorItems,bool canKill, List<string> preventKill, string killMsg): this(code, name, desc, exits, floorItems)
-        {
+            this.Description = desc ?? "A ROOM";
+            this.Exits = exits ?? new List<Exit>();
+            this.FloorItems = floorItems ?? new List<Item>();
             this.canKill = canKill;
-            this.preventKill = preventKill;
-            this.KillMsg = killMsg;
-        }
-        public Room(string code, string name, string desc, List<Exit> exits, List<Item> floorItems, bool canKill, List<string> preventKill, string killMsg, List<NonPlayerCharacter> NPCs) : this(code, name, desc, exits, floorItems,canKill, preventKill,killMsg)
-        {
-            this.NonPlayerCharacters = NPCs;
+            this.preventKill = preventKill ?? new List<string>();
+            this.KillMsg = killMsg ??string.Empty;
+            this.NonPlayerCharacters = new List<NonPlayerCharacter>();
+            this.LocationTag = LocationPrefix;
+            this.NPCsTag = npcPrefix;
+            this.ItemsTag = itemPrefix;
+            this.DescTag = desciptionPrefix ?? string.Empty;
+            this.ExitTag = exitPrefix;
         }
 
 

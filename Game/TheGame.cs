@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using TextGameEngine.Env;
+using TextGameEngine.Player;
 
 namespace TextGameEngine.Game
 {
@@ -28,11 +29,14 @@ namespace TextGameEngine.Game
             this.InvRegex = new Regex(@"\b(INV|INVENTORY|POCKETS|BACKPACK|CHECK INV|CHECK INVENTORY)\b");
             this.FromNPCRegex = new Regex(@"\b( FROM )\b");
             this.LookRoomRegex = new Regex(@"\b(ROOM|AROUND)");
+            this.AskNPCRegex = new Regex(@"\b(ASK ABOUT|ASK|TALK ABOUT)\b");
+            this.AboutRegex = new Regex(@"\b( ABOUT )");
             this.PickedUpItemMsg = "You picked up the {item}.";
             this.DroppedItemMsg = "You drop the {item}.";
             this.MissPickUpMsg = "There Is no {item} in this room.";
-            this.missDropMsg = "You do not have {item} to drop.";
+            this.MissDropMsg = "You do not have {item} to drop.";
             this.missLookAtItem = "You look for {item}, but it is not in your INVENTORY or the room.";
+            this.MissNPCResponse = "Sorry I do not know anything about that.";
             this.GetItemFromNPCMsg = "You got the {item} from {npc}";
             this.PrintRoomDuringLoop = true;
             this.WinningRoomCodePrivate = string.Empty;
@@ -41,6 +45,7 @@ namespace TextGameEngine.Game
             this.WhatKilledCode = string.Empty;
             this.WhereKilledCode = string.Empty;
             this.WinningMsg = string.Empty;
+            this.Player = new PlayerClass();
         }
         #endregion
 
@@ -55,7 +60,8 @@ namespace TextGameEngine.Game
         public string GetItemFromNPCMsg {  get; set; }
         public string DroppedItemMsg {  get; set; }
         public string MissPickUpMsg {  get; set; }
-        public string missDropMsg { get; set; }
+        public string MissDropMsg { get; set; }
+        public string MissNPCResponse {  get; set; }
 
         public string missLookAtItem {  get; set; }
         public Regex MoveRegex { get; set; }
@@ -67,6 +73,8 @@ namespace TextGameEngine.Game
         public Regex InvRegex { get; set; }
         public Regex LookRoomRegex { get; set; }
         public Regex FromNPCRegex { get; set; }
+        public Regex AskNPCRegex { get; set; }
+        public Regex AboutRegex { get; set; }
         private bool PrintRoomDuringLoop { get; set; }
 
         private string WinningRoomCodePrivate { get; set; }
@@ -77,6 +85,7 @@ namespace TextGameEngine.Game
         private string WhereKilledCode { get; set; }
         private string WhatKilledCode { get; set; }
         public string WinningMsg { get; set; }
+        public PlayerClass Player { get; set; }
         #endregion
 
         #region Game Play Functions
@@ -254,6 +263,53 @@ namespace TextGameEngine.Game
             }
         }
 
+        private void AskNPC(string input)
+        {
+            var currentRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == this.CurrentRoomCode);
+            if (currentRoom != null)
+            {
+                if (AboutRegex.IsMatch(input))
+                {
+                    var inputParts = AboutRegex.Split(input);
+                    if (inputParts.Length >= 3)
+                    {
+                        var npc = currentRoom.NonPlayerCharacters.FirstOrDefault(x => x.Name == inputParts[0]);
+                        if (npc != null)
+                        {
+                            if (npc.Responses.TryGetValue(inputParts[2], out var response))
+                            {
+                                Console.WriteLine(response.ToString());
+                            }
+                            else
+                            {
+                                Console.WriteLine(MissNPCResponse);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    var response = string.Empty;
+                    foreach (var npc in currentRoom.NonPlayerCharacters)
+                    {
+                        if (npc.Responses.TryGetValue(input, out response))
+                        {
+                            break;
+                        }
+                    }
+
+                    if (string.IsNullOrEmpty(response))
+                    {
+                        Console.WriteLine(MissNPCResponse);
+                    }
+                    else
+                    {
+                        Console.WriteLine(response);
+                    }
+                }
+            }
+        }
+
         private void ItemKillYou(Room currentRoom,Item item)
         {
             PlayInv.Add(item);
@@ -326,7 +382,7 @@ namespace TextGameEngine.Game
                     Console.WriteLine(DroppedItemMsg.Replace("{item}", item.Code));
                 }
                 else 
-                    Console.WriteLine(missDropMsg.Replace("{item}", code));
+                    Console.WriteLine(MissDropMsg.Replace("{item}", code));
                 
             }
         
@@ -389,6 +445,11 @@ namespace TextGameEngine.Game
             else if (InvRegex.IsMatch(input))
             {
                 PrintPlayerInv();
+            }
+            else if (AskNPCRegex.IsMatch(input))
+            {
+                strippedInput = Regex.Replace(input, AskNPCRegex.ToString(), "").Trim();
+                AskNPC(strippedInput);
             }
         }
         #endregion
