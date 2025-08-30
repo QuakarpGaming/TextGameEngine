@@ -70,6 +70,10 @@ namespace TextGameEngine.Player
         #endregion
 
         #region Calcs
+        public void HealFull()
+        {
+            this.CurrentHealth = TotalMaxHealthPublic;
+        }
         private void CheckMaxHealth(int value)
         {
             var totalMaxHealthTemp = TotalMaxHealth();
@@ -149,8 +153,8 @@ namespace TextGameEngine.Player
             sb.AppendLine($"Health: {this.CurrentHealth} / {TotalMaxHealth()}");
             sb.AppendLine($"Damage Output: {TotalMinDamage()}-{TotalMaxDamage()}");
             sb.AppendLine($"Damage Reduction: {TotalDamageReduction()}");
-            sb.AppendLine($"Base Hit Chance: {TotalBaseHitChance()}");
-            sb.AppendLine($"Base Dodge Chance: {TotalDodgeChance()}");
+            sb.AppendLine($"Hit Chance: {TotalBaseHitChance()}");
+            sb.AppendLine($"Dodge Chance: {TotalDodgeChance()}");
             Console.WriteLine(sb.ToString());
         }
 
@@ -164,8 +168,8 @@ namespace TextGameEngine.Player
                 sb.AppendLine($"{equiped}:\t{Equipment.FirstOrDefault(x => x.IsEquiped && x.Type == equiped)?.Name ?? string.Empty}");
             }
             sb.AppendLine();
-            sb.AppendLine("IN INVENTORY");
-            sb.AppendLine("------------\n");
+            sb.AppendLine("EQUIPMENT IN INVENTORY");
+            sb.AppendLine("----------------------\n");
             foreach (var equipment in Equipment.Where(x => x.IsEquiped == false).OrderBy(x => x.Type))
             {
                 sb.AppendLine($"{equipment.Name}\tSlot: {equipment.Type}");

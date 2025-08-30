@@ -7,6 +7,13 @@ using System.Threading.Tasks;
 
 namespace TextGameEngine.Env
 {
+    public enum WhenToFight
+    {
+        never,
+        enter,
+        leave,
+        ask
+    }
     public class NonPlayerCharacter
     {
         #region Constructors
@@ -18,23 +25,25 @@ namespace TextGameEngine.Env
             Responses = new Dictionary<string, string>();
             NamePrivate = this.Name;
         }
-        public NonPlayerCharacter(string name,string description)
-        {
-            Name = name;
-            Description = description;
-            Inventory = new List<Item>();
-            Responses = new Dictionary<string, string>();
-            NamePrivate = this.Name.ToUpper();
-        }
-        public NonPlayerCharacter(string name, string description, List<Item> inventory) : this(name, description)
-        {
-            Inventory = inventory;
-            Responses = new Dictionary<string, string>();
-        }
 
-        public NonPlayerCharacter(string name, string description, List<Item> inventory, Dictionary<string, string> responses) : this(name, description, inventory)
+        public NonPlayerCharacter(string name, string? description = null, List<Item>? inventory = null, Dictionary<string, string>? responses = null,int currentHealth = 10,int maxhealth = 10,int minDamage = 1, int maxDamage = 3
+                                 ,bool atLeast1Dmg = true, int damageReduction = 0,int hitchance = 90,int dodgeChance = 5,bool willFight = false, WhenToFight whenToFight = WhenToFight.never) 
         {
-            Responses = responses;
+            Name = name.ToUpper();
+            Description = description ?? string.Empty;
+            Inventory = inventory ?? new List<Item>();
+            Responses = responses ?? new Dictionary<string, string>();
+            NamePrivate = this.Name;
+            CurrentHealth = currentHealth <= maxhealth ? currentHealth : maxhealth;
+            MaxHealth = maxhealth;
+            MinDamageOutput = minDamage;
+            MaxDamageOutput = maxDamage;
+            TakeAtLeastOneDamage = atLeast1Dmg;
+            DamageReduction = damageReduction;
+            HitChance = hitchance;
+            DodgeChance = dodgeChance;
+            WillFight = willFight;
+            WhenToFight = whenToFight;
         }
 
         #endregion
@@ -49,6 +58,17 @@ namespace TextGameEngine.Env
         #endregion
         #region Data Private
         private string NamePrivate { get; set; }
+        public int CurrentHealth { get; set; }
+        public int MaxHealth { get; set; }
+
+        public int MinDamageOutput { get; set; }
+        public int MaxDamageOutput { get; set; }
+        public int DamageReduction { get; set; }
+        public bool TakeAtLeastOneDamage { get; set; }
+        public int HitChance { get; set; }
+        public int DodgeChance { get; set; }
+        public bool WillFight { set; get; }
+        public WhenToFight WhenToFight { get; set; }
         #endregion
         #region Printers
         public string PrintLookedAt()
@@ -82,6 +102,36 @@ namespace TextGameEngine.Env
             }
             sb.Append('.');
             return sb.ToString();
+        }
+
+        public void printAll()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"Name: {this.Name}");
+            sb.AppendLine();
+            sb.AppendLine($"Description: {this.Description}");
+            sb.AppendLine();
+            sb.AppendLine("Inventory:");
+            foreach (Item item in Inventory)
+            {
+                sb.AppendLine($"\t{item.Code}\t-\t{item.Description}");
+            }
+            sb.AppendLine();
+            sb.AppendLine("Responses:");
+            foreach (var key in Responses.Keys)
+            {
+                sb.AppendLine($"\t{key}\t-\t{Responses[key]}");
+            }
+            sb.AppendLine();
+            sb.AppendLine("Combat Stats:");
+            sb.AppendLine($"HP:\t\t{CurrentHealth} / {MaxHealth}");
+            sb.AppendLine($"Damage:\t\t{MinDamageOutput} - {MaxDamageOutput}");
+            sb.AppendLine($"Take 1:\t\t{TakeAtLeastOneDamage.ToString()}");
+            sb.AppendLine($"DR:\t\t{DamageReduction}");
+            sb.AppendLine($"Hit Chance:\t{HitChance}");
+            sb.AppendLine($"Dodge Chance:\t{DodgeChance}");
+            sb.AppendLine($"Will Fight:\t{WillFight.ToString()} when {WhenToFight.ToString()}");
+            Console.WriteLine(sb.ToString());
         }
         #endregion
     }

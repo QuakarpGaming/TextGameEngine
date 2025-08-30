@@ -16,8 +16,8 @@ namespace TextGameEngine.Game
         public TheGame()
         {
             this.Rooms = new List<Room>();
-            this.CurrentRoomCode = string.Empty;
-            this.CurrentRoomCodePrivate = string.Empty;
+            this.CurrentRoomCode = "START";
+            this.CurrentRoomCodePrivate = "START";
             this.Errors = new List<string>();
             this.PlayInv = new List<Item>();
             this.InputPrefix = "What Will You Do: ";
@@ -31,9 +31,12 @@ namespace TextGameEngine.Game
             this.LookRoomRegex = new Regex(@"\b(ROOM|AROUND)");
             this.AskNPCRegex = new Regex(@"\b(ASK ABOUT|ASK|TALK ABOUT)\b");
             this.AboutRegex = new Regex(@"\b( ABOUT )");
+            this.WearEquimentRegex = new Regex(@"\b(WEAR|PUT ON|EQUIP|DRAW|DAWN|HOLD)\b");
+            this.RemoveEquimentRegex = new Regex(@"\b(REMOVE|TAKE OFF|STORE|UNEQUIP)\b");
+            this.SelfRegex = new Regex(@"\b(SELF|ME|STATUS|STAT|STATS)\b");
             this.PickedUpItemMsg = "You picked up the {item}.";
             this.DroppedItemMsg = "You drop the {item}.";
-            this.MissPickUpMsg = "There Is no {item} in this room.";
+            this.MissPickUpMsg = "There is no {item} in this room.";
             this.MissDropMsg = "You do not have {item} to drop.";
             this.missLookAtItem = "You look for {item}, but it is not in your INVENTORY or the room.";
             this.MissNPCResponse = "Sorry I do not know anything about that.";
@@ -44,8 +47,17 @@ namespace TextGameEngine.Game
             this.GameState = "CONT";
             this.WhatKilledCode = string.Empty;
             this.WhereKilledCode = string.Empty;
+            this.WhoKilledCode = string.Empty;
             this.WinningMsg = string.Empty;
             this.Player = new PlayerClass();
+            this.StartCombat = false;
+            this.ListOfFoesPrefix = "Remaining foes: ";
+            this.StartOfCombatString = "You are under attack!";
+            this.AttackNPCRegex = new Regex(@"\b(ATTACK|HIT|STRIKE|BONK|PIMP SLAP|BITCH SLAP|SLAP)\b");
+            this.MissAttackString = "Missed!";
+            this.KIAstring = "You start to fall to the ground, dead before you reach it.";
+            this.LootItems = [];
+            this.addRemoveHealthOnEquipChange = true;
         }
         #endregion
 
@@ -75,6 +87,11 @@ namespace TextGameEngine.Game
         public Regex FromNPCRegex { get; set; }
         public Regex AskNPCRegex { get; set; }
         public Regex AboutRegex { get; set; }
+        public Regex WearEquimentRegex { get; set; }
+        public Regex RemoveEquimentRegex { get; set; }
+        public Regex SelfRegex { get; set; }
+        public bool addRemoveHealthOnEquipChange { get; set; }
+
         private bool PrintRoomDuringLoop { get; set; }
 
         private string WinningRoomCodePrivate { get; set; }
@@ -86,6 +103,15 @@ namespace TextGameEngine.Game
         private string WhatKilledCode { get; set; }
         public string WinningMsg { get; set; }
         public PlayerClass Player { get; set; }
+        private bool StartCombat { get; set; }
+        public string ListOfFoesPrefix {  get; set; }
+        public Regex AttackNPCRegex { get; set; }
+        public string MissAttackString { get; set; }
+        public string WhoKilledCode { get; set; }
+        public string StartOfCombatString { get; set; }
+        public string KIAstring {  get; set; }
+        private List<Item> LootItems { get; set; }
+        
         #endregion
 
         #region Game Play Functions
@@ -128,28 +154,43 @@ namespace TextGameEngine.Game
 
             if(this.Errors.Count == 0)
             {
-                this.CurrentRoomCode = codeToMoveTo;
-                var newRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == codeToMoveTo);
-                if (newRoom != null && newRoom.canKill)
+                if(CheckForCombat(this.CurrentRoomCode, WhenToFight.leave))
                 {
-                    if (newRoom.preventKill.Count == 0)
-                    {
-                        this.GameState = "DEAD";
-                    }
-                    else
-                    {
-                        var newGameState = "DEAD";
-                        foreach (var item in newRoom.preventKill)
-                        {
-                            if (PlayInv.Any(x => x.Code == item))
-                            {
-                                newGameState = "CONT";
-                                break;
-                            }
-                        }
+                    Combat(this.CurrentRoomCode, WhenToFight.leave);
+                }
 
-                        this.WhereKilledCode = newGameState == "DEAD" ? codeToMoveTo : string.Empty;
-                        this.GameState = newGameState;
+                if (this.GameState != "DEAD")
+                {
+                    this.CurrentRoomCode = codeToMoveTo;
+                    var newRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == codeToMoveTo);
+                    if (newRoom != null && newRoom.canKill)
+                    {
+                        if (newRoom.preventKill.Count == 0)
+                        {
+                            this.GameState = "DEAD";
+                        }
+                        else
+                        {
+                            var newGameState = "DEAD";
+                            foreach (var item in newRoom.preventKill)
+                            {
+                                if (PlayInv.Any(x => x.Code == item))
+                                {
+                                    newGameState = "CONT";
+                                    break;
+                                }
+                            }
+
+                            this.WhereKilledCode = newGameState == "DEAD" ? codeToMoveTo : string.Empty;
+                            this.GameState = newGameState;
+                        }
+                    }
+                    if (this.GameState != "DEAD")
+                    { 
+                        if (CheckForCombat(this.CurrentRoomCode, WhenToFight.enter))
+                        {
+                            Combat(this.CurrentRoomCode, WhenToFight.enter);
+                        }
                     }
                 }
             }
@@ -177,6 +218,8 @@ namespace TextGameEngine.Game
             Console.WriteLine("You currently Have: \n");
             foreach (var item in this.PlayInv)
                 Console.WriteLine(item.Code);
+            Console.WriteLine();
+            this.Player.printEquipment();
         }
 
         private void PrintItemDesc(string ItemCode)
@@ -193,6 +236,19 @@ namespace TextGameEngine.Game
                 if (item != null)
                 {
                     desc = item.Description;
+                }
+                else
+                {
+                    var equipment = this.Rooms.FirstOrDefault(x => x.RoomCode == this.CurrentRoomCode)?.FloorEquipment.FirstOrDefault(x => x.Name == ItemCode);
+                    if (equipment == null)
+                    {
+                        equipment = this.Player.Equipment.FirstOrDefault(x => x.Name == ItemCode);
+                    }
+                    if (equipment != null)
+                    {
+                        equipment.PrintEquipmentStats();
+                        desc = "\t";
+                    }
                 }
             }
 
@@ -257,7 +313,20 @@ namespace TextGameEngine.Game
                             }
                         }
                     }
-                    if(!foundItem)
+                    if (!foundItem)
+                    {
+                        var equipment = currentRoom.FloorEquipment.FirstOrDefault(x => x.Name == input);
+                        if (equipment != null)
+                        {
+                            this.Player.Equipment.Add(equipment);
+                            currentRoom.FloorEquipment.Remove(equipment);
+                            foundItem = true;
+                            Console.WriteLine($"{this.PickedUpItemMsg.Replace("{item}",equipment.Name)}");
+                        }
+                        
+                    }
+
+                    if (!foundItem)
                         Console.WriteLine(MissPickUpMsg.Replace("{item}", input));
                 }
             }
@@ -278,22 +347,32 @@ namespace TextGameEngine.Game
                         {
                             if (npc.Responses.TryGetValue(inputParts[2], out var response))
                             {
-                                Console.WriteLine(response.ToString());
-                            }
-                            else
-                            {
-                                Console.WriteLine(MissNPCResponse);
+                                if (CheckForCombat(npc))
+                                {
+                                    Combat(this.CurrentRoomCode, WhenToFight.ask);
+                                }
+                                if (this.GameState != "DEAD")
+                                {
+                                    Console.WriteLine(response.ToString());
+                                }
                             }
                         }
+                        else
+                        {
+                            Console.WriteLine(MissNPCResponse);
+                        }
+
                     }
                 }
                 else
                 {
                     var response = string.Empty;
+                    var attackingNPC = new NonPlayerCharacter();
                     foreach (var npc in currentRoom.NonPlayerCharacters)
                     {
                         if (npc.Responses.TryGetValue(input, out response))
                         {
+
                             break;
                         }
                     }
@@ -304,7 +383,14 @@ namespace TextGameEngine.Game
                     }
                     else
                     {
-                        Console.WriteLine(response);
+                        if (CheckForCombat(attackingNPC))
+                        {
+                            Combat(this.CurrentRoomCode, WhenToFight.ask);
+                        }
+                        if (this.GameState != "DEAD")
+                        {
+                            Console.WriteLine(response);
+                        }
                     }
                 }
             }
@@ -387,8 +473,54 @@ namespace TextGameEngine.Game
             }
         
         }
+        private void Equip(string input)
+        {
+            var targetEquipment = this.Player.Equipment.FirstOrDefault(x => x.IsEquiped == false && x.Name == input);
+            if (targetEquipment != null)
+            {
+                var sb = new StringBuilder();
+                var currentEquipment = this.Player.Equipment.FirstOrDefault(x => x.IsEquiped && x.Type == targetEquipment.Type);
+                if (currentEquipment != null)
+                {
+                    if(currentEquipment.Type == EquipmentType.Weapon || currentEquipment.Type == EquipmentType.Shield)
+                    {
+                        sb.Append($"You put away your {currentEquipment.Name}. ");
+                    }
+                    else
+                    {
+                        sb.Append($"You take off your {currentEquipment.Name}.");
+                    }
+                        currentEquipment.IsEquiped = false;
+                }
+                targetEquipment.IsEquiped = true;
+                if (targetEquipment.Type == EquipmentType.Weapon || targetEquipment.Type == EquipmentType.Shield)
+                {
+                    sb.AppendLine($"You are now Wielding your {targetEquipment.Name}");
+                }
+                else
+                {
+                    sb.AppendLine($"You are now wearing {targetEquipment.Name}");
+                }
+                Console.WriteLine(sb.ToString());
+                if(this.addRemoveHealthOnEquipChange)
+                {
+                    if(currentEquipment != null && currentEquipment.HealthBoost != 0)
+                    {
+                        this.Player.CurrentHealth -= currentEquipment.HealthBoost;
+                    }
+                    if(targetEquipment.HealthBoost != 0)
+                    {
+                        this.Player.CurrentHealth += targetEquipment.HealthBoost;
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine($"There is no {input} in your unequipped equipment.");
+            }
+        }
 
-        
+
         #endregion
 
         #region Input
@@ -441,7 +573,15 @@ namespace TextGameEngine.Game
                 strippedInput = Regex.Replace(input, DroppedItemRegex.ToString(), "").Trim();
                 DropItem(strippedInput);
             }
-
+            else if (WearEquimentRegex.IsMatch(input))
+            {
+                strippedInput = Regex.Replace(input, WearEquimentRegex.ToString(), "").Trim();
+                Equip(strippedInput);
+            }
+            else if (SelfRegex.IsMatch(input))
+            {
+                this.Player.printAll();
+            }
             else if (InvRegex.IsMatch(input))
             {
                 PrintPlayerInv();
@@ -515,6 +655,17 @@ namespace TextGameEngine.Game
                             Console.WriteLine(killedItem.KillMsg);
                         }
                     }
+                    else if(string.IsNullOrEmpty(this.WhoKilledCode) == false)
+                    {
+                        var currentRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == this.CurrentRoomCode);
+                        var sb = new StringBuilder();
+                        if(currentRoom != null)
+                        {
+                            sb.Append($"You lie in the {currentRoom.Name}. "); 
+                        }
+                        sb.Append($"You were fell by {this.WhoKilledCode}. Better luck next time.");
+                        Console.WriteLine(sb.ToString());
+                    }
                     break;
 
                 case "WIN":
@@ -529,13 +680,270 @@ namespace TextGameEngine.Game
             Console.WriteLine("\n\nThank you so much for playing, press the enter key to exit.");
         }
         #endregion
+
+        #region Combat
+        private bool CheckForCombat(string roomCode, WhenToFight when)
+        {
+            bool veryYes = false;
+            var currentRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == this.CurrentRoomCode);
+            if (currentRoom != null)
+            {
+                veryYes = currentRoom.NonPlayerCharacters.Any(npc => npc.WillFight && npc.WhenToFight == when);
+            }
+            return veryYes;
+        }
+        private bool CheckForCombat(NonPlayerCharacter npc,WhenToFight when = WhenToFight.ask)
+        {
+            return npc.WhenToFight == when;
+        }
+
+        private void Combat(string roomCode, WhenToFight when)
+        {
+            var currentRoom = this.Rooms.Where(r => r.RoomCode == roomCode.ToUpper()).FirstOrDefault();
+            if (currentRoom != null)
+            {
+                var foeList = currentRoom.NonPlayerCharacters.Where(npc => npc.WillFight && npc.WhenToFight == when).ToList();
+                //NEED TO REMOVE DEAD FOES FROM ROOM, THEY ARE ALL NPCS OBJECTS
+                currentRoom.NonPlayerCharacters.RemoveAll(npc => npc.WillFight && npc.WhenToFight == when);
+                Console.Clear();
+                Console.WriteLine($"{this.StartOfCombatString}\n\n");
+                while (foeList.Count > 0 && !(this.GameState == "DEAD"))
+                {
+                    PlayerPhase(foeList);
+                    FoePhase(foeList);
+                }
+
+                if (this.GameState != "DEAD")
+                {
+                    PrintVictoryStats();
+                    AddLootToPlayer();
+                }
+                Console.WriteLine("Press any key to continue.");
+                Console.ReadLine();
+            }
+        }
+        private void PrintVictoryStats()
+        {
+            //will add more later see TODO.txt
+            Console.WriteLine("YOU ARE VICTORIOUS!\n");
+            PrintLoot();
+        }
+
+        private void AddLootToPlayer()
+        {
+            this.PlayInv.AddRange(LootItems);
+            this.LootItems.Clear();
+        }
+        private void PrintLoot()
+        {
+            var sb = new StringBuilder();
+            foreach (var item in LootItems)
+            {
+                if (sb.Length == 0)
+                {
+                    sb.Append($"{item.Code}");
+                }
+                else
+                {
+                    sb.Append($", {item.Code}");
+                }
+            }
+
+            if (sb.Length > 0)
+            {
+                Console.WriteLine($"You have Received {sb.ToString()}\n");
+            }
+        }
+        private void PlayerPhase(List<NonPlayerCharacter> foes)
+        {
+            var input = string.Empty;
+            do
+            {
+                PrintFoeList(foes);
+                input = GetInput();
+                
+            } while (ActCombatInput(input,foes));
+        }
+        private void FoePhase(List<NonPlayerCharacter> foes)
+        {
+            foreach( var foe in foes)
+            {
+                if(RollToHitPlayer(this.Player,foe))
+                {
+                    RollAndApplyDmg(this.Player, foe.MinDamageOutput, foe.MaxDamageOutput, foe.Name);
+                    if(this.GameState == "DEAD")
+                    {
+                        this.WhoKilledCode = foe.Name;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"{foe.Name} MISSED their attack!\n\n");
+                }
+            }
+        }
+        private void PrintFoeList(List<NonPlayerCharacter> foes)
+        {
+            var sb = new StringBuilder();
+            sb.Append($"{this.ListOfFoesPrefix}");
+            foreach (var foe in foes)
+            {
+                if (sb.Length == this.ListOfFoesPrefix.Length)
+                {
+                    sb.Append(foe.Name);
+                }
+                else
+                {
+                    sb.Append(", " + foe.Name);
+                }
+            }
+            sb.Append(".\n");
+            Console.WriteLine(sb.ToString());
+        }
+
+        private bool ActCombatInput(string input,List<NonPlayerCharacter> foes)
+        {
+            var breakCombatInputLoop = false;
+            var strippedInput = string.Empty;
+            Console.WriteLine();
+            if(AttackNPCRegex.IsMatch(input))
+            {
+                strippedInput = Regex.Replace(input, AttackNPCRegex.ToString(), "").Trim();
+                breakCombatInputLoop = AttackNPC(strippedInput,foes);
+            }
+
+            return !breakCombatInputLoop;
+        }
+
+        private bool AttackNPC(string input, List<NonPlayerCharacter> foes)
+        {
+            var breakCombatInputLoop = false;
+            var targetFoe = foes.FirstOrDefault(x => x.Name == input);
+            if (targetFoe != null)
+            {
+                breakCombatInputLoop = true;
+                if(RollToHitNPC(this.Player, targetFoe))
+                {
+                    var removeNPC = RollAndApplyDmg(targetFoe, this.Player.TotalMinDamagePublic, this.Player.TotalMaxDamagePublic);
+                    if(removeNPC)
+                    {
+                        Console.WriteLine($"You have Defeated {targetFoe.Name}");
+                        foes.Remove(targetFoe);
+                        LootItems.AddRange(targetFoe.Inventory);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"{this.MissAttackString}");
+                }
+
+            }
+            else
+            {
+                Console.WriteLine($"There is no target: {input}");
+            }
+            return breakCombatInputLoop;
+        }
+
+        private bool RollToHitNPC(PlayerClass player,NonPlayerCharacter targetFoe)
+        {
+            var dice = new Random();
+            //player hit chance - foe dodge chance
+            //90 - 10 = 80
+            //roll d100 get less than or equal 80
+            var toHit = player.TotalHitChancePublic - targetFoe.DodgeChance;
+            var roll = dice.Next(100) + 1;
+
+            return roll <= toHit;
+        }
+        private bool RollToHitPlayer(PlayerClass player, NonPlayerCharacter targetFoe)
+        {
+            var dice = new Random();
+            //player hit chance - foe dodge chance
+            //90 - 10 = 80
+            //roll d100 get less than or equal 80
+            var toHit = targetFoe.HitChance - player.TotalDodgeChancePublic;
+            var roll = dice.Next(100) + 1;
+
+            return roll <= toHit;
+        }
+        private bool RollAndApplyDmg(NonPlayerCharacter npc,int min,int max)
+        {
+            var dice = new Random();
+            //roll between min max
+            var dmg = dice.Next(min, max+1);//it does not include the upper limit
+            //apply DR
+            dmg -= npc.DamageReduction;
+            //find floor on dmg
+            if(dmg < 0)
+            {
+                if(npc.TakeAtLeastOneDamage)
+                {
+                    dmg = 1;
+                }
+                else
+                {
+                    dmg = 0;
+                }
+            }
+            //apply dmg
+            npc.CurrentHealth -= dmg;
+
+            //output dmg
+            Console.WriteLine($"You hit {npc.Name} for {dmg} damage!");
+
+            //return if foe is dead
+            return npc.CurrentHealth <= 0;
+        }
+        private void RollAndApplyDmg(PlayerClass player,int min,int max, string foeName)
+        {
+            var dice = new Random();
+            //roll between min max
+            var dmg = dice.Next(min, max + 1);//it does not include the upper limit
+            //apply DR
+            dmg -= player.TotalDamageReductionPublic;
+            //find floor on dmg
+            if (dmg < 0)
+            {
+                if (player.TakeAtLeastOneDamage)
+                {
+                    dmg = 1;
+                }
+                else
+                {
+                    dmg = 0;
+                }
+            }
+
+            //apply dmg
+            player.CurrentHealth -= dmg;
+            //output dmg
+            var HitDmgString = new StringBuilder();
+            HitDmgString.Append($"{foeName} hit you for {dmg} damage! ");
+            if(player.CurrentHealth <= 0)
+            {
+                HitDmgString.Append($"{this.KIAstring}\n\n");
+                HitDmgString.AppendLine("Press any key to continue");
+            }
+            else
+            {
+                HitDmgString.Append($"You have {player.CurrentHealth} Hitpoint(s) remaining!\n");
+            }
+            Console.WriteLine(HitDmgString.ToString());
+            //check if we need to change the gamestate to dead
+            if (player.CurrentHealth <= 0)
+            {
+                this.GameState = "DEAD";
+            }
+        }
+        #endregion
         #endregion
 
         #region Game Play Loop
         public void GamePlayLoop()
         {
             var input = string.Empty;
-            
+
             do
             {
                 if (this.PrintRoomDuringLoop)
@@ -546,8 +954,8 @@ namespace TextGameEngine.Game
                 input = GetInput();
                 ActInput(input);
                 this.GameState = CheckGameState();
-                
-            }while(BreakGamePlayLoop(input));
+
+            } while (BreakGamePlayLoop(input));
 
             DisplayGameEndMsg();
         }

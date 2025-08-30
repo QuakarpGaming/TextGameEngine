@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using TextGameEngine.Player;
 
 namespace TextGameEngine.Env
 {
@@ -27,10 +28,11 @@ namespace TextGameEngine.Env
             this.ItemsTag = "Items: ";
             this.DescTag = string.Empty;
             this.ExitTag = "Exits: ";
+            this.FloorEquipment = [];
         }
         public Room(string code, string name, string? desc = null, List<Exit>? exits = null, List<Item>? floorItems = null, bool canKill = false, List<string>? preventKill = null,
                     string? killMsg = null, List<NonPlayerCharacter>? NPCs = null,string LocationPrefix = "Location: ", string npcPrefix = "People in Room: ", string itemPrefix = "Items: ", string? desciptionPrefix = null,
-                    string exitPrefix = "Exits: ")
+                    string exitPrefix = "Exits: ", List<Equipment>? floorEquipment = null)
         {
             this.RoomCode = code.ToUpper();
             this.RoomCodePrivate = this.RoomCode;
@@ -41,18 +43,19 @@ namespace TextGameEngine.Env
             this.canKill = canKill;
             this.preventKill = preventKill ?? new List<string>();
             this.KillMsg = killMsg ??string.Empty;
-            this.NonPlayerCharacters = new List<NonPlayerCharacter>();
+            this.NonPlayerCharacters = NPCs ?? new List<NonPlayerCharacter>();
             this.LocationTag = LocationPrefix;
             this.NPCsTag = npcPrefix;
             this.ItemsTag = itemPrefix;
             this.DescTag = desciptionPrefix ?? string.Empty;
             this.ExitTag = exitPrefix;
+            this.FloorEquipment = floorEquipment ?? [];
         }
 
 
         #endregion
 
-            #region Data - Public
+        #region Data - Public
         public string RoomCode { get { return this.RoomCodePrivate; } set { this.RoomCodePrivate = value.ToUpper(); } }
         private string RoomCodePrivate { get; set; }
         public string Name { get; set; }
@@ -69,6 +72,7 @@ namespace TextGameEngine.Env
         public string ItemsTag { get; set; }
         public string NPCsTag { get; set; }
         public string ExitTag { get; set; }
+        public List<Equipment> FloorEquipment { get; set; }
         #endregion
 
         #region Setters and Getters
@@ -148,6 +152,17 @@ namespace TextGameEngine.Env
                 else
                 {
                     sb.Append(", " + item.Code);
+                }
+            }
+            foreach (var equipment in this.FloorEquipment)
+            {
+                if (sb.Length == 0)
+                {
+                    sb.Append(equipment.Name);
+                }
+                else
+                {
+                    sb.Append(", " + equipment.Name);
                 }
             }
             sb.Append(".");

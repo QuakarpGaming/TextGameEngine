@@ -63,5 +63,27 @@ namespace TextGameEngine.Player
         public int DamageReductionBoost { get; set; }
         public int HealthBoost { get; set; }
         #endregion
+
+        #region Printers
+        public void PrintEquipmentStats()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"\n\nName:\t\t\t{this.Name}");
+            if (MinDamageBoost != 0)
+                sb.AppendLine($"Minium Damage Boost:\t\t{this.MinDamageBoost}");
+            if (MaxDamageBoost != 0)
+                sb.AppendLine($"Maxium Damage Boost:\t\t{this.MaxDamageBoost}");
+            if (HealthBoost != 0)
+                sb.AppendLine($"Health Boost:\t\t\t{this.HealthBoost}");
+            if (DodgeBoost != 0)
+                sb.AppendLine($"Dodge Boost:\t\t\t{this.DodgeBoost}");
+            if (HitBoost != 0)
+                sb.AppendLine($"To Hit Boost:\t\t\t{this.HitBoost}");
+            if (DamageReductionBoost != 0)
+                sb.AppendLine($"Damage Reduction:\t\t{this.DamageReductionBoost}");
+            
+            Console.WriteLine(sb.ToString());
+        }
+        #endregion
     }
 }
