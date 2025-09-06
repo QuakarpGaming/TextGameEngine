@@ -1,12 +1,6 @@
 ﻿things to add:
--add a history that can be recalled with the up/down keys
-
-
-things to add(with an if)
---vitory stats, like gold and shit if we get that far.
---foes drop equipment?
-
 
 
 nice to have
--make the printing of list(item,foes,etc) be genartic 
+--shops(That buy things from you)
+

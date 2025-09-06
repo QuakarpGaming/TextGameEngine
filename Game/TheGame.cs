@@ -16,8 +16,6 @@ namespace TextGameEngine.Game
         public TheGame()
         {
             this.Rooms = new List<Room>();
-            this.CurrentRoomCode = "START";
-            this.CurrentRoomCodePrivate = "START";
             this.Errors = new List<string>();
             this.PlayInv = new List<Item>();
             this.InputPrefix = "What Will You Do: ";
@@ -28,9 +26,9 @@ namespace TextGameEngine.Game
             this.QuitRegex = new Regex(@"\b(QUIT|DESKTOP|ALT-F4)\b");
             this.InvRegex = new Regex(@"\b(INV|INVENTORY|POCKETS|BACKPACK|CHECK INV|CHECK INVENTORY)\b");
             this.FromNPCRegex = new Regex(@"\b( FROM )\b");
-            this.LookRoomRegex = new Regex(@"\b(ROOM|AROUND)");
+            this.LookRoomRegex = new Regex(@"\b(ROOM|AROUND)\b");
             this.AskNPCRegex = new Regex(@"\b(ASK ABOUT|ASK|TALK ABOUT)\b");
-            this.AboutRegex = new Regex(@"\b( ABOUT )");
+            this.AboutRegex = new Regex(@"\b( ABOUT )\b");
             this.WearEquimentRegex = new Regex(@"\b(WEAR|PUT ON|EQUIP|DRAW|DAWN|HOLD)\b");
             this.RemoveEquimentRegex = new Regex(@"\b(REMOVE|TAKE OFF|STORE|UNEQUIP)\b");
             this.SelfRegex = new Regex(@"\b(SELF|ME|STATUS|STAT|STATS)\b");
@@ -58,13 +56,21 @@ namespace TextGameEngine.Game
             this.KIAstring = "You start to fall to the ground, dead before you reach it.";
             this.LootItems = [];
             this.addRemoveHealthOnEquipChange = true;
+            this.LootEquipment = [];
+            this.LootGold = 0;
+            this.ShopRegex = new Regex(@"\b(SHOP AT|ENTER SHOP|SHOP|BROWSE)\b");
+            this.ShopBuyRegex = new Regex(@"\b(BUY|PURCHASE)\b");
+            this.ShopSellRegex = new Regex(@"\b(SELL|FENCE)\b");
+            this.LeaveShopRegex = new Regex(@"\b(EXIT|LEAVE)\b");
+            this.HelpMenuRegex = new Regex(@"\b(HELP ME|HELP)\b");
+
+
         }
         #endregion
 
         #region Data
         public List<Room> Rooms { get; set; }
-        public string CurrentRoomCode { get { return this.CurrentRoomCodePrivate; } set { this.CurrentRoomCodePrivate = value.ToUpper(); } }
-        private string CurrentRoomCodePrivate { get; set; }
+        public Room? CurrentRoom { get; set; }
         public List<string> Errors { get; set; }
         public List<Item> PlayInv {  get; set; }
         public string InputPrefix {  get; set; }
@@ -111,7 +117,14 @@ namespace TextGameEngine.Game
         public string StartOfCombatString { get; set; }
         public string KIAstring {  get; set; }
         private List<Item> LootItems { get; set; }
-        
+        private List<Equipment> LootEquipment { get; set; }
+        private int LootGold { get; set; }
+        public Regex ShopRegex { get; set; }
+        public Regex ShopBuyRegex { get; set; }
+        public Regex ShopSellRegex { get; set; }
+        public Regex LeaveShopRegex { get; set; }
+        public Regex HelpMenuRegex { get; set; }
+
         #endregion
 
         #region Game Play Functions
@@ -119,77 +132,76 @@ namespace TextGameEngine.Game
         public bool MoveRoom(string exitDesc)
         {
             
-            var currentRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == this.CurrentRoomCode);
             var codeToMoveTo = string.Empty;
             this.Errors.Clear();
-            if (currentRoom != null)
+            
+            var currentExit = CurrentRoom.Exits.FirstOrDefault(x => x.ToRoomDiscription.ToUpper() == exitDesc.ToUpper());
+            if (currentExit != null)
             {
-                //does the room code exist
-                var currentExit = currentRoom.Exits.FirstOrDefault(x => x.ToRoomDiscription.ToUpper() == exitDesc.ToUpper());
-                if (currentExit != null)
+                codeToMoveTo = currentExit.ToRoomCode;
+                if (currentExit.IsLocked)
                 {
-                    codeToMoveTo = currentExit.ToRoomCode;
-                    if (currentExit.IsLocked)
+                    if (PlayInv.Any(x => x.Code == currentExit.KeyItemCode))
                     {
-                        if (PlayInv.Any(x => x.Code == currentExit.KeyItemCode))
-                        {
-                            currentExit.IsLocked = false;
-                        }
-                        else
-                        {
-                            this.Errors.Add("{locked}");
-                            Console.WriteLine(currentExit.LockMsg ?? "Locked");
-                        }
+                        currentExit.IsLocked = false;
                     }
-                }
-                else
-                {
-                    this.Errors.Add("{not_found}");
+                    else
+                    {
+                        this.Errors.Add("{locked}");
+                        Console.WriteLine(currentExit.LockMsg ?? "Locked");
+                    }
                 }
             }
             else
             {
                 this.Errors.Add("{not_found}");
             }
+            
+
 
             if(this.Errors.Count == 0)
             {
-                if(CheckForCombat(this.CurrentRoomCode, WhenToFight.leave))
+                if(CheckForCombat(WhenToFight.leave))
                 {
-                    Combat(this.CurrentRoomCode, WhenToFight.leave);
+                    Combat(WhenToFight.leave);
                 }
 
                 if (this.GameState != "DEAD")
                 {
-                    this.CurrentRoomCode = codeToMoveTo;
+                    
                     var newRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == codeToMoveTo);
-                    if (newRoom != null && newRoom.canKill)
+                    
+                    if (newRoom != null )
                     {
-                        if (newRoom.preventKill.Count == 0)
+                        CurrentRoom = newRoom;
+                        if (newRoom.canKill)
                         {
-                            this.GameState = "DEAD";
-                        }
-                        else
-                        {
-                            var newGameState = "DEAD";
-                            foreach (var item in newRoom.preventKill)
+                            if (newRoom.preventKill.Count == 0)
                             {
-                                if (PlayInv.Any(x => x.Code == item))
-                                {
-                                    newGameState = "CONT";
-                                    break;
-                                }
+                                this.GameState = "DEAD";
                             }
+                            else
+                            {
+                                var newGameState = "DEAD";
+                                foreach (var item in newRoom.preventKill)
+                                {
+                                    if (PlayInv.Any(x => x.Code == item))
+                                    {
+                                        newGameState = "CONT";
+                                        break;
+                                    }
+                                }
 
-                            this.WhereKilledCode = newGameState == "DEAD" ? codeToMoveTo : string.Empty;
-                            this.GameState = newGameState;
+                                this.WhereKilledCode = newGameState == "DEAD" ? codeToMoveTo : string.Empty;
+                                this.GameState = newGameState;
+                            }
                         }
                     }
                     if (this.GameState != "DEAD")
                     { 
-                        if (CheckForCombat(this.CurrentRoomCode, WhenToFight.enter))
+                        if (CheckForCombat(WhenToFight.enter))
                         {
-                            Combat(this.CurrentRoomCode, WhenToFight.enter);
+                            Combat(WhenToFight.enter);
                         }
                     }
                 }
@@ -200,7 +212,7 @@ namespace TextGameEngine.Game
         public void PrintFloorItemDesc(string code)
         {
             code = code?.ToUpper() ?? string.Empty;
-            var item = this.Rooms.FirstOrDefault(x=> x.RoomCode == this.CurrentRoomCode)?.FloorItems.FirstOrDefault(x => x.Code == code);
+            var item = CurrentRoom.FloorItems.FirstOrDefault(x => x.Code == code);
             if (item != null)
             {
                 Console.WriteLine(item.Description);
@@ -216,6 +228,7 @@ namespace TextGameEngine.Game
         private void PrintPlayerInv()
         {
             Console.WriteLine("You currently Have: \n");
+            Console.WriteLine($"{this.Player.PlayerGold} Gold Piece(s)\n");
             foreach (var item in this.PlayInv)
                 Console.WriteLine(item.Code);
             Console.WriteLine();
@@ -225,7 +238,7 @@ namespace TextGameEngine.Game
         private void PrintItemDesc(string ItemCode)
         {
             var desc = string.Empty;
-            var item = this.Rooms.FirstOrDefault(x => x.RoomCode == this.CurrentRoomCode)?.FloorItems.FirstOrDefault(x => x.Code == ItemCode);
+            var item = CurrentRoom.FloorItems.FirstOrDefault(x => x.Code == ItemCode);
             if (item != null)
             {
                 desc = item.Description;
@@ -239,7 +252,7 @@ namespace TextGameEngine.Game
                 }
                 else
                 {
-                    var equipment = this.Rooms.FirstOrDefault(x => x.RoomCode == this.CurrentRoomCode)?.FloorEquipment.FirstOrDefault(x => x.Name == ItemCode);
+                    var equipment = CurrentRoom.FloorEquipment.FirstOrDefault(x => x.Name == ItemCode);
                     if (equipment == null)
                     {
                         equipment = this.Player.Equipment.FirstOrDefault(x => x.Name == ItemCode);
@@ -264,133 +277,128 @@ namespace TextGameEngine.Game
         private void PickUpItem(string input)
         {
             input = input.ToUpper() ?? string.Empty;
-            var currentRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == this.CurrentRoomCode);
-            if (currentRoom != null)
+            
+            var floorItem = CurrentRoom.FloorItems.FirstOrDefault(x => x.Code == input.ToUpper());
+            if (floorItem != null)
             {
-                var floorItem = currentRoom.FloorItems.FirstOrDefault(x => x.Code == input.ToUpper());
-                if (floorItem != null)
+                ItemKillYou(CurrentRoom, floorItem);
+            }
+            else
+            {
+                Item? NPCItem = null;
+                var foundItem = false;
+                if (FromNPCRegex.IsMatch(input))
                 {
-                    ItemKillYou(currentRoom, floorItem);
-                }
-                else
-                {
-                    Item? NPCItem = null;
-                    var foundItem = false;
-                    if (FromNPCRegex.IsMatch(input))
+                    var inputParts = FromNPCRegex.Split(input);
+                    if (inputParts.Length >= 3)
                     {
-                        var inputParts = FromNPCRegex.Split(input);
-                        if (inputParts.Length >= 3)
+                        var npc = CurrentRoom.NonPlayerCharacters.FirstOrDefault(x => x.Name == inputParts[2]);
+                        if (npc != null)
                         {
-                            var npc = currentRoom.NonPlayerCharacters.FirstOrDefault(x => x.Name == inputParts[2]);
-                            if (npc != null)
+                            var item = npc.Inventory.FirstOrDefault(x => x.Code == inputParts[0]);
+                            if (item != null)
                             {
-                                var item = npc.Inventory.FirstOrDefault(x => x.Code == inputParts[0]);
-                                if (item != null)
-                                {
-                                    ItemKillYou(npc, item);
-                                }
-                                else
-                                {
-                                    Console.WriteLine($"{npc.Name} Does Not Have {inputParts[0]}.");
-                                }
+                                ItemKillYou(npc, item);
                             }
                             else
                             {
-                                Console.WriteLine($"{inputParts[2]} is not here to give you {inputParts[0]}.");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        foreach (NonPlayerCharacter npc in currentRoom.NonPlayerCharacters)
-                        {
-                            NPCItem = npc.Inventory.FirstOrDefault(x => x.Code == input);
-                            if (NPCItem != null)
-                            {
-                                ItemKillYou(npc, NPCItem);
-                                foundItem = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (!foundItem)
-                    {
-                        var equipment = currentRoom.FloorEquipment.FirstOrDefault(x => x.Name == input);
-                        if (equipment != null)
-                        {
-                            this.Player.Equipment.Add(equipment);
-                            currentRoom.FloorEquipment.Remove(equipment);
-                            foundItem = true;
-                            Console.WriteLine($"{this.PickedUpItemMsg.Replace("{item}",equipment.Name)}");
-                        }
-                        
-                    }
-
-                    if (!foundItem)
-                        Console.WriteLine(MissPickUpMsg.Replace("{item}", input));
-                }
-            }
-        }
-
-        private void AskNPC(string input)
-        {
-            var currentRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == this.CurrentRoomCode);
-            if (currentRoom != null)
-            {
-                if (AboutRegex.IsMatch(input))
-                {
-                    var inputParts = AboutRegex.Split(input);
-                    if (inputParts.Length >= 3)
-                    {
-                        var npc = currentRoom.NonPlayerCharacters.FirstOrDefault(x => x.Name == inputParts[0]);
-                        if (npc != null)
-                        {
-                            if (npc.Responses.TryGetValue(inputParts[2], out var response))
-                            {
-                                if (CheckForCombat(npc))
-                                {
-                                    Combat(this.CurrentRoomCode, WhenToFight.ask);
-                                }
-                                if (this.GameState != "DEAD")
-                                {
-                                    Console.WriteLine(response.ToString());
-                                }
+                                Console.WriteLine($"{npc.Name} Does Not Have {inputParts[0]}.");
                             }
                         }
                         else
                         {
-                            Console.WriteLine(MissNPCResponse);
+                            Console.WriteLine($"{inputParts[2]} is not here to give you {inputParts[0]}.");
                         }
-
                     }
                 }
                 else
                 {
-                    var response = string.Empty;
-                    var attackingNPC = new NonPlayerCharacter();
-                    foreach (var npc in currentRoom.NonPlayerCharacters)
+                    foreach (NonPlayerCharacter npc in CurrentRoom.NonPlayerCharacters)
                     {
-                        if (npc.Responses.TryGetValue(input, out response))
+                        NPCItem = npc.Inventory.FirstOrDefault(x => x.Code == input);
+                        if (NPCItem != null)
                         {
-
+                            ItemKillYou(npc, NPCItem);
+                            foundItem = true;
                             break;
                         }
                     }
-
-                    if (string.IsNullOrEmpty(response))
+                }
+                if (!foundItem)
+                {
+                    var equipment = CurrentRoom.FloorEquipment.FirstOrDefault(x => x.Name == input);
+                    if (equipment != null)
                     {
-                        Console.WriteLine(MissNPCResponse);
+                        this.Player.Equipment.Add(equipment);
+                        CurrentRoom.FloorEquipment.Remove(equipment);
+                        foundItem = true;
+                        Console.WriteLine($"{this.PickedUpItemMsg.Replace("{item}",equipment.Name)}");
+                    }
+                        
+                }
+
+                if (!foundItem)
+                    Console.WriteLine(MissPickUpMsg.Replace("{item}", input));
+            }
+            
+        }
+
+        private void AskNPC(string input)
+        {
+            
+            if (AboutRegex.IsMatch(input))
+            {
+                var inputParts = AboutRegex.Split(input);
+                if (inputParts.Length >= 3)
+                {
+                    var npc = CurrentRoom.NonPlayerCharacters.FirstOrDefault(x => x.Name == inputParts[0]);
+                    if (npc != null)
+                    {
+                        if (npc.Responses.TryGetValue(inputParts[2], out var response))
+                        {
+                            if (CheckForCombat(npc))
+                            {
+                                Combat( WhenToFight.ask);
+                            }
+                            if (this.GameState != "DEAD")
+                            {
+                                Console.WriteLine(response.ToString());
+                            }
+                        }
                     }
                     else
                     {
-                        if (CheckForCombat(attackingNPC))
-                        {
-                            Combat(this.CurrentRoomCode, WhenToFight.ask);
-                        }
-                        if (this.GameState != "DEAD")
-                        {
-                            Console.WriteLine(response);
-                        }
+                        Console.WriteLine(MissNPCResponse);
+                    }
+
+                }
+            }
+            else
+            {
+                var response = string.Empty;
+                var attackingNPC = new NonPlayerCharacter();
+                foreach (var npc in CurrentRoom.NonPlayerCharacters)
+                {
+                    if (npc.Responses.TryGetValue(input, out response))
+                    {
+
+                        break;
+                    }
+                }
+
+                if (string.IsNullOrEmpty(response))
+                {
+                    Console.WriteLine(MissNPCResponse);
+                }
+                else
+                {
+                    if (CheckForCombat(attackingNPC))
+                    {
+                        Combat(WhenToFight.ask);
+                    }
+                    if (this.GameState != "DEAD")
+                    {
+                        Console.WriteLine(response);
                     }
                 }
             }
@@ -457,20 +465,18 @@ namespace TextGameEngine.Game
         private void DropItem(string code)
         {
             code = code.ToUpper() ?? string.Empty;
-            var currentRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == this.CurrentRoomCode);
-            if (currentRoom != null)
+           
+            var item = this.PlayInv.FirstOrDefault(x => x.Code == code.ToUpper());
+            if (item != null)
             {
-                var item = this.PlayInv.FirstOrDefault(x => x.Code == code.ToUpper());
-                if (item != null)
-                {
-                    currentRoom.FloorItems.Add(item);
-                    this.PlayInv.Remove(item);
-                    Console.WriteLine(DroppedItemMsg.Replace("{item}", item.Code));
-                }
-                else 
-                    Console.WriteLine(MissDropMsg.Replace("{item}", code));
-                
+                CurrentRoom.FloorItems.Add(item);
+                this.PlayInv.Remove(item);
+                Console.WriteLine(DroppedItemMsg.Replace("{item}", item.Code));
             }
+            else 
+                Console.WriteLine(MissDropMsg.Replace("{item}", code));
+                
+            
         
         }
         private void Equip(string input)
@@ -527,21 +533,37 @@ namespace TextGameEngine.Game
         private string GetInput()
         {
             string input = string.Empty;
-            do
-            {
+            //do
+            //{
                 Console.Write(this.InputPrefix);
-                input = (Console.ReadLine() ?? string.Empty).ToUpper();
-            } while (!(string.IsNullOrWhiteSpace(input) == false));
-            return input;
+                return (Console.ReadLine() ?? string.Empty).ToUpper();
+            //} while (!(string.IsNullOrWhiteSpace(input) == false));
+            //return input;
         }
 
         private void ActInput(string input)
         {
             var strippedInput = string.Empty;
-            if (MoveRegex.IsMatch(input))
+            if (ShopRegex.IsMatch(input))
+            {
+                if (CurrentRoom.Shop != null)
+                {
+                    ShopLoop(CurrentRoom.Shop);
+                    PrintRoomDuringLoop = true;
+                }
+            }
+            else if (MoveRegex.IsMatch(input))
             {
                 strippedInput = Regex.Replace(input, MoveRegex.ToString(), "").Trim();
-                PrintRoomDuringLoop = MoveRoom(strippedInput);
+                if (CurrentRoom.Shop != null && CurrentRoom.Shop.Name == strippedInput)
+                {
+                    ShopLoop(CurrentRoom.Shop);
+                    PrintRoomDuringLoop = true;
+                }
+                else
+                {
+                    PrintRoomDuringLoop = MoveRoom(strippedInput);
+                }
             }
             else if (LookAtItemRegex.IsMatch(input))
             {
@@ -552,7 +574,7 @@ namespace TextGameEngine.Game
                 }
                 else
                 {
-                    var npc = this.Rooms.FirstOrDefault(r => r.RoomCode == CurrentRoomCode)?.NonPlayerCharacters.FirstOrDefault(x => x.Name == strippedInput);
+                    var npc = this.CurrentRoom.NonPlayerCharacters.FirstOrDefault(x => x.Name == strippedInput);
                     if (npc != null)
                     {
                         Console.WriteLine(npc.PrintLookedAt());
@@ -591,16 +613,127 @@ namespace TextGameEngine.Game
                 strippedInput = Regex.Replace(input, AskNPCRegex.ToString(), "").Trim();
                 AskNPC(strippedInput);
             }
+            else if(HelpMenuRegex.IsMatch(input))
+            {
+                ShowHelpMenu();
+                PrintRoomDuringLoop = true;
+            }
+        }
+
+        private void ShowHelpMenu()
+        {
+            Console.Clear();
+            var sb = new StringBuilder();
+            sb.AppendLine("Keywords\n\n");
+            
+            foreach(var prop in this.GetType().GetProperties().Where(x => x.PropertyType.Name == "Regex").ToList())
+            {
+                //DO NOT CHANGE THIS STATEMENT UNLESS YOU KNOW WHAT YOU ARE DOING
+                //THIS IS GRABING THE REGEX TYPE VARS FROM THE GAME OBJ AND TRANSLATING THEM INTO HUMAN ON THE FLY.
+                //THIS IS SO WE DO NOT HAVE TO UPDATE A HELP MENU FUNCTION FOR EVER KEYWORD(REGEX)
+                //REPETE
+                //DO NOT TOUCH
+                //IF I SEE A CHANGESET WITH THIS MODIFIED I WILL FRY YOUR MOTHERBORAD AND USE IT TO COOK BACON
+                sb.AppendLine($"{Regex.Replace(prop.Name.Replace("Regex",""), "[A-Z]", " $0").Replace("N P C","NPC")}:  { this.GetType()?.GetProperty(prop.Name)?.GetValue(this)?.ToString()?.Replace(@"\b(","").Replace(@")\b","").Replace("|",", ") ?? string.Empty}");
+            }
+
+            Console.WriteLine( sb.ToString() );
+            Console.WriteLine();
+            Console.ReadLine();
         }
         #endregion
 
         #region Death and Taxes
+        private void ShopLoop(Shop shop)
+        {
+            Console.Clear();
+            do
+            {
+                shop.PrintStore();
+            }
+            while (ActShopInput(GetInput(),shop));
+        }
+        private bool ActShopInput(string input,Shop shop)
+        {
+            var breakLoop = false;
+            var strippedInput = string.Empty;
+            if (ShopBuyRegex.IsMatch(input))
+            {
+                strippedInput = Regex.Replace(input, ShopBuyRegex.ToString(), "").Trim();
+                var item = shop.Items.FirstOrDefault(x => x.Code == strippedInput);
+                if (item != null)
+                {
+                    if (ConfirmPurchase(item.Code, item.Gold))
+                    {
+                        BuyFromShop(shop, item);
+                    }
+
+                }
+                else
+                {
+                    var equipment = shop.Equipment.FirstOrDefault(x => x.Name == strippedInput);
+                    if (equipment != null)
+                    {
+                        if (ConfirmPurchase(equipment.Name, equipment.Gold))
+                        {
+                            BuyFromShop(shop, equipment);
+                        }
+                    }
+                }
+            }
+            else if (MoveRegex.IsMatch(input) || LeaveShopRegex.IsMatch(input))
+            {
+                breakLoop = true;
+            }
+                return !breakLoop;
+        }
+        
+        private bool ConfirmPurchase(string name,int price)
+        {
+            Console.WriteLine($"Are you sure you want to Purchase {name} for {price} Gold Pieces?(Y|N)");
+            return (Console.ReadLine() ?? string.Empty).ToUpper().StartsWith("Y");
+        }
+        private void BuyFromShop(Shop shop,Item item)
+        {
+            if (CheckPlayerGold(item.Gold))
+            {
+                shop.Items.Remove(item);
+                this.PlayInv.Add(item);
+                Player.PlayerGold -= item.Gold;
+                shop.Gold += item.Gold;
+                Console.WriteLine(shop.ThankYouString);
+            }
+            else
+            {
+                Console.WriteLine($"You Do Not have {item.Gold} for {item.Code}");
+            }
+        }
+        private void BuyFromShop(Shop shop, Equipment equipment)
+        {
+            if(CheckPlayerGold(equipment.Gold))
+            {
+                shop.Equipment.Remove(equipment);
+                this.Player.Equipment.Add(equipment);
+                this.Player.PlayerGold -= equipment.Gold;
+                shop.Gold += equipment.Gold;
+                Console.WriteLine(shop.ThankYouString);
+            }
+            else
+            {
+                Console.WriteLine($"You Do Not have {equipment.Gold} for {equipment.Name}");
+
+            }
+        }
+        private bool CheckPlayerGold(int gold)
+        {
+            return this.Player.PlayerGold >= gold;
+        }
         private string CheckGameState()
         {
             if(GameState == "DEAD")
                 return GameState; 
             
-            if (CurrentRoomCode == WinningRoomCodePrivate)
+            if (CurrentRoom.RoomCode == WinningRoomCodePrivate)
             {
                 foreach(var item in this.WinningItems)
                 {
@@ -657,12 +790,11 @@ namespace TextGameEngine.Game
                     }
                     else if(string.IsNullOrEmpty(this.WhoKilledCode) == false)
                     {
-                        var currentRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == this.CurrentRoomCode);
+                        
                         var sb = new StringBuilder();
-                        if(currentRoom != null)
-                        {
-                            sb.Append($"You lie in the {currentRoom.Name}. "); 
-                        }
+                        
+                        sb.Append($"You lie in the {CurrentRoom.Name}. "); 
+                        
                         sb.Append($"You were fell by {this.WhoKilledCode}. Better luck next time.");
                         Console.WriteLine(sb.ToString());
                     }
@@ -682,45 +814,39 @@ namespace TextGameEngine.Game
         #endregion
 
         #region Combat
-        private bool CheckForCombat(string roomCode, WhenToFight when)
+        private bool CheckForCombat(WhenToFight when)
         {
-            bool veryYes = false;
-            var currentRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == this.CurrentRoomCode);
-            if (currentRoom != null)
-            {
-                veryYes = currentRoom.NonPlayerCharacters.Any(npc => npc.WillFight && npc.WhenToFight == when);
-            }
-            return veryYes;
+            return CurrentRoom.NonPlayerCharacters.Any(npc => npc.WillFight && npc.WhenToFight == when);
         }
         private bool CheckForCombat(NonPlayerCharacter npc,WhenToFight when = WhenToFight.ask)
         {
             return npc.WhenToFight == when;
         }
 
-        private void Combat(string roomCode, WhenToFight when)
+        private void Combat(WhenToFight when)
         {
-            var currentRoom = this.Rooms.Where(r => r.RoomCode == roomCode.ToUpper()).FirstOrDefault();
-            if (currentRoom != null)
-            {
-                var foeList = currentRoom.NonPlayerCharacters.Where(npc => npc.WillFight && npc.WhenToFight == when).ToList();
-                //NEED TO REMOVE DEAD FOES FROM ROOM, THEY ARE ALL NPCS OBJECTS
-                currentRoom.NonPlayerCharacters.RemoveAll(npc => npc.WillFight && npc.WhenToFight == when);
-                Console.Clear();
-                Console.WriteLine($"{this.StartOfCombatString}\n\n");
-                while (foeList.Count > 0 && !(this.GameState == "DEAD"))
-                {
-                    PlayerPhase(foeList);
-                    FoePhase(foeList);
-                }
 
-                if (this.GameState != "DEAD")
-                {
-                    PrintVictoryStats();
-                    AddLootToPlayer();
-                }
-                Console.WriteLine("Press any key to continue.");
-                Console.ReadLine();
+            var foeList = CurrentRoom.NonPlayerCharacters.Where(npc => npc.WillFight && npc.WhenToFight == when).ToList();
+            //NEED TO REMOVE DEAD FOES FROM ROOM, THEY ARE ALL NPCS OBJECTS
+            CurrentRoom.NonPlayerCharacters.RemoveAll(npc => npc.WillFight && npc.WhenToFight == when);
+            Console.Clear();
+            Console.WriteLine($"{this.StartOfCombatString}\n\n");
+            while (foeList.Count > 0 && !(this.GameState == "DEAD"))
+            {
+                PlayerPhase(foeList);
+                FoePhase(foeList);
             }
+
+            if (this.GameState != "DEAD")
+            {
+                PrintVictoryStats();
+                AddLootToPlayer();
+                AddLootEquipmentToPlayer();
+                AddGoldToPlayer();
+            }
+            Console.WriteLine("Press any key to continue.");
+            Console.ReadLine();
+            
         }
         private void PrintVictoryStats()
         {
@@ -734,26 +860,56 @@ namespace TextGameEngine.Game
             this.PlayInv.AddRange(LootItems);
             this.LootItems.Clear();
         }
+        private void AddLootEquipmentToPlayer()
+        {
+            this.Player.Equipment.AddRange(LootEquipment);
+            this.LootEquipment.Clear();
+        }
+        private void AddGoldToPlayer()
+        {
+            this.Player.PlayerGold += LootGold;
+            LootGold = 0;
+        }
         private void PrintLoot()
         {
             var sb = new StringBuilder();
-            foreach (var item in LootItems)
+            if (LootGold > 0 || LootEquipment.Count > 0 || LootItems.Count > 0)
             {
-                if (sb.Length == 0)
+                sb.AppendLine("YOU HAVE FOUND");
+                sb.AppendLine("==============\n");
+            }
+            if(LootGold > 0)
+            {
+                sb.AppendLine($"{LootGold} gold Pieces!\n");
+            }
+            if (LootItems.Count > 0)
+            {
+                sb.AppendLine("Items:");
+                sb.AppendLine("======\n");
+                foreach (var item in LootItems)
                 {
-                    sb.Append($"{item.Code}");
+
+                    sb.AppendLine($"{item.Code}");
                 }
-                else
+                sb.AppendLine();
+            }
+            if (LootEquipment.Count > 0)
+            {
+                sb.AppendLine("Equipment:");
+                sb.AppendLine("==========\n");
+                foreach (var item in LootEquipment)
                 {
-                    sb.Append($", {item.Code}");
+                    sb.AppendLine($"{item.Name}");
                 }
             }
 
             if (sb.Length > 0)
             {
-                Console.WriteLine($"You have Received {sb.ToString()}\n");
+                Console.WriteLine(sb.ToString());
             }
         }
+
+        
         private void PlayerPhase(List<NonPlayerCharacter> foes)
         {
             var input = string.Empty;
@@ -811,6 +967,25 @@ namespace TextGameEngine.Game
                 strippedInput = Regex.Replace(input, AttackNPCRegex.ToString(), "").Trim();
                 breakCombatInputLoop = AttackNPC(strippedInput,foes);
             }
+            else if (LookAtItemRegex.IsMatch(input))
+            {
+                breakCombatInputLoop = false;
+                strippedInput = Regex.Replace(input, LookAtItemRegex.ToString(), "").Trim();
+                var lookedAtFoe = foes.FirstOrDefault(x => x.Name == strippedInput);
+                if (lookedAtFoe != null)
+                {
+                    Console.Clear();
+                    lookedAtFoe.printCombatStats();
+                    Console.WriteLine("\n\nPress enter to continue.");
+                    Console.ReadLine();
+                    Console.Clear();
+                }
+                else
+                {
+                    Console.WriteLine($"There is no foe named: {strippedInput}");
+                }
+            }
+
 
             return !breakCombatInputLoop;
         }
@@ -830,6 +1005,8 @@ namespace TextGameEngine.Game
                         Console.WriteLine($"You have Defeated {targetFoe.Name}");
                         foes.Remove(targetFoe);
                         LootItems.AddRange(targetFoe.Inventory);
+                        LootEquipment.AddRange(targetFoe.DroppedOnDeathEquipment);
+                        LootGold += targetFoe.DroppedGold;
                     }
                 }
                 else
@@ -943,6 +1120,10 @@ namespace TextGameEngine.Game
         public void GamePlayLoop()
         {
             var input = string.Empty;
+            if(CurrentRoom == null)
+            {
+                CurrentRoom = Rooms.FirstOrDefault(x => x.RoomCode == "START") ?? Rooms[0];
+            }
 
             do
             {
@@ -973,17 +1154,8 @@ namespace TextGameEngine.Game
 
         public void PrintCurrentRoom()
         {
-            var currentRoom = this.Rooms.FirstOrDefault(x => x.RoomCode == this.CurrentRoomCode);
-
-            if (currentRoom != null)
-            {
                 Console.Clear();
-                Console.WriteLine(currentRoom.PrintRoom());
-            }
-            else
-            {
-                Console.WriteLine("you are outside the programmers time and space.");
-            }
+                Console.WriteLine(CurrentRoom.PrintRoom());
         }
         #endregion
     }

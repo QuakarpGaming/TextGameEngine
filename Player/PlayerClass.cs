@@ -23,8 +23,10 @@ namespace TextGameEngine.Player
             this.BaseHitChance = 90;
             this.BaseDodgeChance = 5;
             this.Name = "Rather Dashing";
+            this.PlayerGold = 0;
         }
-        public PlayerClass(string? name = null, int currentHealth = 10, int maxHealth = 10, int minDamageOutput =1, int maxDamageOutput = 3, int damageReduction=0, bool takeAtLeastOneDamage = true, int baseHitChance = 90, int baseDodgeChance = 5, List<Equipment>? equipment = null)
+        public PlayerClass(string? name = null, int currentHealth = 10, int maxHealth = 10, int minDamageOutput =1, int maxDamageOutput = 3, int damageReduction=0, bool takeAtLeastOneDamage = true,
+                            int baseHitChance = 90, int baseDodgeChance = 5, List<Equipment>? equipment = null,int startingGold = 0)
         {
             Equipment = equipment ?? [];//this has to be first, it runs the max health check and this needs to be set.
             Name = name ?? "Rather Dashing";
@@ -37,6 +39,7 @@ namespace TextGameEngine.Player
             TakeAtLeastOneDamage = takeAtLeastOneDamage;
             BaseHitChance = baseHitChance;
             BaseDodgeChance = baseDodgeChance;
+            PlayerGold = startingGold;
         }
 
         #endregion
@@ -62,6 +65,7 @@ namespace TextGameEngine.Player
         public int TotalDamageReductionPublic { get { return TotalDamageReduction(); } }
         public int TotalHitChancePublic { get { return TotalBaseHitChance(); } }
         public int TotalDodgeChancePublic { get { return TotalDodgeChance(); } }
+        public int PlayerGold { get; set; }
         #endregion
         #endregion
 

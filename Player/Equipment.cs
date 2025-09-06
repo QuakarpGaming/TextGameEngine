@@ -33,8 +33,9 @@ namespace TextGameEngine.Player
             this.HealthBoost = 0;
             this.Name = "Stuff";
             this.NamePrivate = this.Name.ToUpper();
+            this.Gold = 10;
         }
-        public Equipment(string? name = null,EquipmentType type = EquipmentType.Head, bool isEquiped = false, int minDamageBoost = 0, int maxDamageBoost = 0, int dodgeBoost = 0, int hitBoost = 0, int damageReductionBoost = 0, int healthBoost = 0)
+        public Equipment(string? name = null,EquipmentType type = EquipmentType.Head, bool isEquiped = false, int minDamageBoost = 0, int maxDamageBoost = 0, int dodgeBoost = 0, int hitBoost = 0, int damageReductionBoost = 0, int healthBoost = 0, int gold = 10)
         {
             Type = type;
             IsEquiped = isEquiped;
@@ -46,7 +47,7 @@ namespace TextGameEngine.Player
             HealthBoost = healthBoost;
             this.Name = name?.Trim().ToUpper() ?? string.Empty;
             this.NamePrivate = name?.Trim().ToUpper() ?? string.Empty;
-
+            Gold = gold;
         }
 
         #endregion
@@ -62,6 +63,7 @@ namespace TextGameEngine.Player
         public int HitBoost { get; set; }
         public int DamageReductionBoost { get; set; }
         public int HealthBoost { get; set; }
+        public int Gold { get; set; }
         #endregion
 
         #region Printers

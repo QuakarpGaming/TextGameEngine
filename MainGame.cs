@@ -2,6 +2,30 @@
 using TextGameEngine.Game;
 using TextGameEngine.Player;
 var game = new TheGame();
+game.Rooms.Add(new Room(code: "Room1",
+                        name: "Bat Combat Room",
+                        desc: "Bat Country!",
+                        exits: new List<Exit> { new Exit(toRoomCode: "Start", toRoomDiscription: "Outside") },
+                        NPCs: new List<NonPlayerCharacter> {
+                            new NonPlayerCharacter(name: "The Bat",
+                                                   description: "A Bat",
+                                                   willFight: true,
+                                                   whenToFight: WhenToFight.enter,
+                                                   inventory: new List<Item> { new Item(code: "Bat Testicals"
+                                                                                        , description: "They are bat balls, what else do you want pervert!")},
+                                                   droppedOnDeathEquipment: new List<Equipment> { new Equipment(name: "Bat Balls",
+                                                                                                                type: EquipmentType.Weapon,
+                                                                                                                minDamageBoost:0,
+                                                                                                                maxDamageBoost: 10,
+                                                                                                                dodgeBoost:4)},
+                                                   droppedGold: 9999
+                                                   )},
+                        shop: new Shop(name: "The Bat Shoppe",
+                                        items: new List<Item> { new Item(code: "BAT BATS", description: "Bats for bats", gold: 10), new Item(code: "Can't buy this", description: "Cost way too much", gold: 10000000) },
+                                        equipment: new List<Equipment> { new Equipment(name: "BatMan"), new Equipment(name:"Manbat", gold:1000000) }
+                                        )
+
+                        ));
 
 game.Rooms.Add(new Room(code: "Start",
                         name: "Outside Of Cave",
@@ -12,13 +36,6 @@ game.Rooms.Add(new Room(code: "Start",
                         
                         
                         
-                        )
-    );
-game.Rooms.Add(new Room(code: "Room1",
-                        name: "Bat Combat Room",
-                        desc: "Bat Country!",
-                        exits: new List<Exit> { new Exit(toRoomCode: "Start",toRoomDiscription: "Outside") },
-                        NPCs: new List<NonPlayerCharacter> { new NonPlayerCharacter(name:"The Bat",description:"A Bat",willFight: true,whenToFight:WhenToFight.enter,inventory:new List<Item> {new Item(code:"Bat Testicals",description:"They are bat balls, what else do you want pervert!") }) }
                         )
     );
 
@@ -34,8 +51,11 @@ game.Player.HealFull();
 game.Player.CurrentHealth -= 4;
 //game.Player.printAll();
 //Console.ReadLine();
-
+//game.CurrentRoom = game.Rooms[0];
 game.GamePlayLoop();
+
+
+
 
 
 

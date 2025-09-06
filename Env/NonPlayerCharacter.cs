@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TextGameEngine.Player;
 
 namespace TextGameEngine.Env
 {
@@ -24,10 +25,12 @@ namespace TextGameEngine.Env
             Inventory = new List<Item>();
             Responses = new Dictionary<string, string>();
             NamePrivate = this.Name;
+            DroppedOnDeathEquipment = [];
         }
 
         public NonPlayerCharacter(string name, string? description = null, List<Item>? inventory = null, Dictionary<string, string>? responses = null,int currentHealth = 10,int maxhealth = 10,int minDamage = 1, int maxDamage = 3
-                                 ,bool atLeast1Dmg = true, int damageReduction = 0,int hitchance = 90,int dodgeChance = 5,bool willFight = false, WhenToFight whenToFight = WhenToFight.never) 
+                                 ,bool atLeast1Dmg = true, int damageReduction = 0,int hitchance = 90,int dodgeChance = 5,bool willFight = false, WhenToFight whenToFight = WhenToFight.never ,List<Equipment>? droppedOnDeathEquipment = null,
+                                 int droppedGold = 0) 
         {
             Name = name.ToUpper();
             Description = description ?? string.Empty;
@@ -44,6 +47,8 @@ namespace TextGameEngine.Env
             DodgeChance = dodgeChance;
             WillFight = willFight;
             WhenToFight = whenToFight;
+            DroppedOnDeathEquipment = droppedOnDeathEquipment ?? [];
+            DroppedGold = droppedGold;
         }
 
         #endregion
@@ -69,6 +74,8 @@ namespace TextGameEngine.Env
         public int DodgeChance { get; set; }
         public bool WillFight { set; get; }
         public WhenToFight WhenToFight { get; set; }
+        public List<Equipment> DroppedOnDeathEquipment { get; set; }
+        public int DroppedGold { get; set; }
         #endregion
         #region Printers
         public string PrintLookedAt()
@@ -85,7 +92,22 @@ namespace TextGameEngine.Env
 
             return sb.ToString();
         }
-
+        public void printCombatStats()
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("You see " + this.Name);
+            sb.AppendLine();
+            sb.AppendLine("Combat Stats:");
+            sb.AppendLine("=============");
+            sb.AppendLine($"HP:\t\t{CurrentHealth} / {MaxHealth}");
+            sb.AppendLine($"Damage:\t\t{MinDamageOutput} - {MaxDamageOutput}");
+            sb.AppendLine($"Take 1:\t\t{TakeAtLeastOneDamage.ToString()}");
+            sb.AppendLine($"DR:\t\t{DamageReduction}");
+            sb.AppendLine($"Hit Chance:\t{HitChance}");
+            sb.AppendLine($"Dodge Chance:\t{DodgeChance}");
+            sb.AppendLine($"Will Fight:\t{WillFight.ToString()} when {WhenToFight.ToString()}");
+            Console.WriteLine(sb.ToString());
+        }
         private string printInv()
         {
             var sb = new StringBuilder();
@@ -103,6 +125,7 @@ namespace TextGameEngine.Env
             sb.Append('.');
             return sb.ToString();
         }
+        
 
         public void printAll()
         {

@@ -17,7 +17,7 @@ namespace TextGameEngine.Env
             PreventKill = new List<string>();
             KillMsg = string.Empty;
         }
-        public Item(string code, string? description = null,bool canKill = false,List<string>? preventKill = null ,string? killMsg = null)
+        public Item(string code, string? description = null,bool canKill = false,List<string>? preventKill = null ,string? killMsg = null, int gold = 10)
         {
             Code = code.ToUpper();
             Description = description ?? string.Empty;
@@ -25,6 +25,7 @@ namespace TextGameEngine.Env
             CanKill = canKill;
             PreventKill = preventKill ?? [];
             KillMsg = killMsg ?? "BLARG YOU ARE DEAD!";
+            Gold = gold;
         }
 
         #endregion
@@ -37,6 +38,7 @@ namespace TextGameEngine.Env
         public bool CanKill { get; set; }
         public List<string> PreventKill { get; set; }
         public string KillMsg { get; set; }
+        public int Gold { get; set; }
         #endregion
 
 

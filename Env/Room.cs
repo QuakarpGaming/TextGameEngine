@@ -29,10 +29,12 @@ namespace TextGameEngine.Env
             this.DescTag = string.Empty;
             this.ExitTag = "Exits: ";
             this.FloorEquipment = [];
+            this.Shop = null;
+            this.ShopTag = "Shop: ";
         }
         public Room(string code, string name, string? desc = null, List<Exit>? exits = null, List<Item>? floorItems = null, bool canKill = false, List<string>? preventKill = null,
                     string? killMsg = null, List<NonPlayerCharacter>? NPCs = null,string LocationPrefix = "Location: ", string npcPrefix = "People in Room: ", string itemPrefix = "Items: ", string? desciptionPrefix = null,
-                    string exitPrefix = "Exits: ", List<Equipment>? floorEquipment = null)
+                    string exitPrefix = "Exits: ", List<Equipment>? floorEquipment = null, Shop? shop = null, string shopTag = "Shop: ")
         {
             this.RoomCode = code.ToUpper();
             this.RoomCodePrivate = this.RoomCode;
@@ -50,6 +52,8 @@ namespace TextGameEngine.Env
             this.DescTag = desciptionPrefix ?? string.Empty;
             this.ExitTag = exitPrefix;
             this.FloorEquipment = floorEquipment ?? [];
+            this.Shop = shop;
+            this.ShopTag = shopTag;
         }
 
 
@@ -73,6 +77,8 @@ namespace TextGameEngine.Env
         public string NPCsTag { get; set; }
         public string ExitTag { get; set; }
         public List<Equipment> FloorEquipment { get; set; }
+        public Shop? Shop { get; set; }
+        public string ShopTag { get; set; }
         #endregion
 
         #region Setters and Getters
@@ -212,7 +218,13 @@ namespace TextGameEngine.Env
             if (this.Exits.Count > 0)
             {
                 sb.AppendLine(this.ExitTag + this.PrintExits());
+                sb.AppendLine();
             }
+            if (this.Shop != null)
+            {
+                sb.AppendLine(this.ShopTag + this.Shop.Name);
+            }
+
             return sb.ToString();
         }
         #endregion
