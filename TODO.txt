@@ -1,6 +1,8 @@
 ﻿things to add:
-
+---cant look at inv/self in shop
+---InportantFlag for stuff so you cant get rid of it
+----sell,drop
 
 nice to have
---shops(That buy things from you)
+
 

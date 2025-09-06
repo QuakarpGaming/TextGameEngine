@@ -135,7 +135,7 @@ namespace TextGameEngine.Game
             var codeToMoveTo = string.Empty;
             this.Errors.Clear();
             
-            var currentExit = CurrentRoom.Exits.FirstOrDefault(x => x.ToRoomDiscription.ToUpper() == exitDesc.ToUpper());
+            var currentExit = CurrentRoom?.Exits.FirstOrDefault(x => x.ToRoomDiscription.ToUpper() == exitDesc.ToUpper());
             if (currentExit != null)
             {
                 codeToMoveTo = currentExit.ToRoomCode;
@@ -212,7 +212,7 @@ namespace TextGameEngine.Game
         public void PrintFloorItemDesc(string code)
         {
             code = code?.ToUpper() ?? string.Empty;
-            var item = CurrentRoom.FloorItems.FirstOrDefault(x => x.Code == code);
+            var item = CurrentRoom?.FloorItems.FirstOrDefault(x => x.Code == code);
             if (item != null)
             {
                 Console.WriteLine(item.Description);
@@ -238,7 +238,7 @@ namespace TextGameEngine.Game
         private void PrintItemDesc(string ItemCode)
         {
             var desc = string.Empty;
-            var item = CurrentRoom.FloorItems.FirstOrDefault(x => x.Code == ItemCode);
+            var item = CurrentRoom?.FloorItems.FirstOrDefault(x => x.Code == ItemCode);
             if (item != null)
             {
                 desc = item.Description;
@@ -252,7 +252,7 @@ namespace TextGameEngine.Game
                 }
                 else
                 {
-                    var equipment = CurrentRoom.FloorEquipment.FirstOrDefault(x => x.Name == ItemCode);
+                    var equipment = CurrentRoom?.FloorEquipment.FirstOrDefault(x => x.Name == ItemCode);
                     if (equipment == null)
                     {
                         equipment = this.Player.Equipment.FirstOrDefault(x => x.Name == ItemCode);
@@ -278,7 +278,7 @@ namespace TextGameEngine.Game
         {
             input = input.ToUpper() ?? string.Empty;
             
-            var floorItem = CurrentRoom.FloorItems.FirstOrDefault(x => x.Code == input.ToUpper());
+            var floorItem = CurrentRoom?.FloorItems.FirstOrDefault(x => x.Code == input.ToUpper());
             if (floorItem != null)
             {
                 ItemKillYou(CurrentRoom, floorItem);
@@ -292,7 +292,7 @@ namespace TextGameEngine.Game
                     var inputParts = FromNPCRegex.Split(input);
                     if (inputParts.Length >= 3)
                     {
-                        var npc = CurrentRoom.NonPlayerCharacters.FirstOrDefault(x => x.Name == inputParts[2]);
+                        var npc = CurrentRoom?.NonPlayerCharacters.FirstOrDefault(x => x.Name == inputParts[2]);
                         if (npc != null)
                         {
                             var item = npc.Inventory.FirstOrDefault(x => x.Code == inputParts[0]);
@@ -313,24 +313,28 @@ namespace TextGameEngine.Game
                 }
                 else
                 {
-                    foreach (NonPlayerCharacter npc in CurrentRoom.NonPlayerCharacters)
+                    //to get rid of warings
+                    if (CurrentRoom != null)
                     {
-                        NPCItem = npc.Inventory.FirstOrDefault(x => x.Code == input);
-                        if (NPCItem != null)
+                        foreach (NonPlayerCharacter npc in CurrentRoom.NonPlayerCharacters)
                         {
-                            ItemKillYou(npc, NPCItem);
-                            foundItem = true;
-                            break;
+                            NPCItem = npc.Inventory.FirstOrDefault(x => x.Code == input);
+                            if (NPCItem != null)
+                            {
+                                ItemKillYou(npc, NPCItem);
+                                foundItem = true;
+                                break;
+                            }
                         }
                     }
                 }
                 if (!foundItem)
                 {
-                    var equipment = CurrentRoom.FloorEquipment.FirstOrDefault(x => x.Name == input);
+                    var equipment = CurrentRoom?.FloorEquipment.FirstOrDefault(x => x.Name == input);
                     if (equipment != null)
                     {
                         this.Player.Equipment.Add(equipment);
-                        CurrentRoom.FloorEquipment.Remove(equipment);
+                        CurrentRoom?.FloorEquipment.Remove(equipment);
                         foundItem = true;
                         Console.WriteLine($"{this.PickedUpItemMsg.Replace("{item}",equipment.Name)}");
                     }
@@ -351,7 +355,7 @@ namespace TextGameEngine.Game
                 var inputParts = AboutRegex.Split(input);
                 if (inputParts.Length >= 3)
                 {
-                    var npc = CurrentRoom.NonPlayerCharacters.FirstOrDefault(x => x.Name == inputParts[0]);
+                    var npc = CurrentRoom?.NonPlayerCharacters.FirstOrDefault(x => x.Name == inputParts[0]);
                     if (npc != null)
                     {
                         if (npc.Responses.TryGetValue(inputParts[2], out var response))
@@ -377,37 +381,41 @@ namespace TextGameEngine.Game
             {
                 var response = string.Empty;
                 var attackingNPC = new NonPlayerCharacter();
-                foreach (var npc in CurrentRoom.NonPlayerCharacters)
+                //this if is to remove a warning 
+                if (CurrentRoom != null)
                 {
-                    if (npc.Responses.TryGetValue(input, out response))
+                    foreach (var npc in CurrentRoom.NonPlayerCharacters)
                     {
+                        if (npc.Responses.TryGetValue(input, out response))
+                        {
 
-                        break;
+                            break;
+                        }
                     }
-                }
 
-                if (string.IsNullOrEmpty(response))
-                {
-                    Console.WriteLine(MissNPCResponse);
-                }
-                else
-                {
-                    if (CheckForCombat(attackingNPC))
+                    if (string.IsNullOrEmpty(response))
                     {
-                        Combat(WhenToFight.ask);
+                        Console.WriteLine(MissNPCResponse);
                     }
-                    if (this.GameState != "DEAD")
+                    else
                     {
-                        Console.WriteLine(response);
+                        if (CheckForCombat(attackingNPC))
+                        {
+                            Combat(WhenToFight.ask);
+                        }
+                        if (this.GameState != "DEAD")
+                        {
+                            Console.WriteLine(response);
+                        }
                     }
                 }
             }
         }
 
-        private void ItemKillYou(Room currentRoom,Item item)
+        private void ItemKillYou(Room? currentRoom,Item item)
         {
             PlayInv.Add(item);
-            currentRoom.FloorItems.Remove(item);
+            currentRoom?.FloorItems.Remove(item);
             Console.WriteLine(PickedUpItemMsg.Replace("{item}", item.Code));
             if (item.CanKill)
             {
@@ -469,7 +477,7 @@ namespace TextGameEngine.Game
             var item = this.PlayInv.FirstOrDefault(x => x.Code == code.ToUpper());
             if (item != null)
             {
-                CurrentRoom.FloorItems.Add(item);
+                CurrentRoom?.FloorItems.Add(item);
                 this.PlayInv.Remove(item);
                 Console.WriteLine(DroppedItemMsg.Replace("{item}", item.Code));
             }
@@ -546,7 +554,7 @@ namespace TextGameEngine.Game
             var strippedInput = string.Empty;
             if (ShopRegex.IsMatch(input))
             {
-                if (CurrentRoom.Shop != null)
+                if (CurrentRoom?.Shop != null)
                 {
                     ShopLoop(CurrentRoom.Shop);
                     PrintRoomDuringLoop = true;
@@ -555,7 +563,7 @@ namespace TextGameEngine.Game
             else if (MoveRegex.IsMatch(input))
             {
                 strippedInput = Regex.Replace(input, MoveRegex.ToString(), "").Trim();
-                if (CurrentRoom.Shop != null && CurrentRoom.Shop.Name == strippedInput)
+                if (CurrentRoom?.Shop != null && CurrentRoom.Shop.Name == strippedInput)
                 {
                     ShopLoop(CurrentRoom.Shop);
                     PrintRoomDuringLoop = true;
@@ -574,7 +582,7 @@ namespace TextGameEngine.Game
                 }
                 else
                 {
-                    var npc = this.CurrentRoom.NonPlayerCharacters.FirstOrDefault(x => x.Name == strippedInput);
+                    var npc = this.CurrentRoom?.NonPlayerCharacters.FirstOrDefault(x => x.Name == strippedInput);
                     if (npc != null)
                     {
                         Console.WriteLine(npc.PrintLookedAt());
@@ -685,6 +693,36 @@ namespace TextGameEngine.Game
             {
                 breakLoop = true;
             }
+            else if(ShopSellRegex.IsMatch(input))
+            {
+                strippedInput = Regex.Replace(input, ShopSellRegex.ToString(), "").Trim();
+                var item = PlayInv.FirstOrDefault(x => x.Code == strippedInput);
+                if (item != null)
+                {
+                    if(ConfirmSelling(item.Code,item.Gold,shop,out var sellingPrice))
+                    {
+                        PlayInv.Remove(item);
+                        shop.Items.Add(item);
+                        Player.PlayerGold += sellingPrice;
+                        shop.Gold -=sellingPrice;
+                    }
+                }
+                else
+                {
+                    var equipment = Player.Equipment.FirstOrDefault(x => x.Name == strippedInput);
+                    if (equipment != null)
+                    {
+                        if(ConfirmSelling(equipment.Name,equipment.Gold,shop, out var sellingPrice))
+                        {
+                            Player.Equipment.Remove(equipment);
+                            shop.Equipment.Add(equipment);
+                            Player.PlayerGold += sellingPrice;
+                            shop.Gold -=sellingPrice;
+                        }
+                    }
+
+                }
+            }
                 return !breakLoop;
         }
         
@@ -692,6 +730,22 @@ namespace TextGameEngine.Game
         {
             Console.WriteLine($"Are you sure you want to Purchase {name} for {price} Gold Pieces?(Y|N)");
             return (Console.ReadLine() ?? string.Empty).ToUpper().StartsWith("Y");
+        }
+        private bool ConfirmSelling(string name, int price,Shop shop,out int sellingPrice)
+        {
+            sellingPrice = CalculateSellingPrice(price, shop);
+            Console.WriteLine($"Are you sure you want to sell {name} for {sellingPrice} Gold Pieces?(Y|N)");
+            return (Console.ReadLine() ?? string.Empty).ToUpper().StartsWith("Y");
+        }
+
+        private int CalculateSellingPrice(int price, Shop shop)
+        {
+            int sellingPrice = (int)Math.Floor((double)price * ((double)shop.PercentTakeOff / 100D));
+            if (sellingPrice > shop.Gold)
+            {
+                sellingPrice = shop.Gold;
+            }
+            return sellingPrice;
         }
         private void BuyFromShop(Shop shop,Item item)
         {
@@ -733,7 +787,7 @@ namespace TextGameEngine.Game
             if(GameState == "DEAD")
                 return GameState; 
             
-            if (CurrentRoom.RoomCode == WinningRoomCodePrivate)
+            if (CurrentRoom?.RoomCode == WinningRoomCodePrivate)
             {
                 foreach(var item in this.WinningItems)
                 {
@@ -793,7 +847,7 @@ namespace TextGameEngine.Game
                         
                         var sb = new StringBuilder();
                         
-                        sb.Append($"You lie in the {CurrentRoom.Name}. "); 
+                        sb.Append($"You lie in the {CurrentRoom?.Name}. "); 
                         
                         sb.Append($"You were fell by {this.WhoKilledCode}. Better luck next time.");
                         Console.WriteLine(sb.ToString());
@@ -816,7 +870,12 @@ namespace TextGameEngine.Game
         #region Combat
         private bool CheckForCombat(WhenToFight when)
         {
-            return CurrentRoom.NonPlayerCharacters.Any(npc => npc.WillFight && npc.WhenToFight == when);
+            //to get rid of warings
+            if (CurrentRoom != null)
+            {
+                return CurrentRoom.NonPlayerCharacters.Any(npc => npc.WillFight && npc.WhenToFight == when);
+            }
+            return false;
         }
         private bool CheckForCombat(NonPlayerCharacter npc,WhenToFight when = WhenToFight.ask)
         {
@@ -826,12 +885,12 @@ namespace TextGameEngine.Game
         private void Combat(WhenToFight when)
         {
 
-            var foeList = CurrentRoom.NonPlayerCharacters.Where(npc => npc.WillFight && npc.WhenToFight == when).ToList();
+            var foeList = CurrentRoom?.NonPlayerCharacters.Where(npc => npc.WillFight && npc.WhenToFight == when).ToList();
             //NEED TO REMOVE DEAD FOES FROM ROOM, THEY ARE ALL NPCS OBJECTS
-            CurrentRoom.NonPlayerCharacters.RemoveAll(npc => npc.WillFight && npc.WhenToFight == when);
+            CurrentRoom?.NonPlayerCharacters.RemoveAll(npc => npc.WillFight && npc.WhenToFight == when);
             Console.Clear();
             Console.WriteLine($"{this.StartOfCombatString}\n\n");
-            while (foeList.Count > 0 && !(this.GameState == "DEAD"))
+            while (foeList?.Count > 0 && !(this.GameState == "DEAD"))
             {
                 PlayerPhase(foeList);
                 FoePhase(foeList);
@@ -1155,7 +1214,9 @@ namespace TextGameEngine.Game
         public void PrintCurrentRoom()
         {
                 Console.Clear();
-                Console.WriteLine(CurrentRoom.PrintRoom());
+                //to get rid of warings
+                if(CurrentRoom != null) 
+                    Console.WriteLine(CurrentRoom.PrintRoom());
         }
         #endregion
     }

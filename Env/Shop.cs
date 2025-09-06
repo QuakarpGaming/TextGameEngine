@@ -10,13 +10,14 @@ namespace TextGameEngine.Env
     public class Shop
     {
         #region constructors
-        public Shop(string? name,int gold = 255,List<Item>? items = null, List<Equipment>? equipment = null,string? thankYouMsg = null)
+        public Shop(string? name,int gold = 255,List<Item>? items = null, List<Equipment>? equipment = null,string? thankYouMsg = null,int percentTakeOff = 50)
         {
             this.Name = name?.ToUpper() ?? string.Empty;
             this.Gold = gold;
             this.Items = items ?? [];
             this.Equipment = equipment ?? [];
             this.ThankYouString = thankYouMsg ?? "Hehe, Thnak you!";
+            this.PercentTakeOff = percentTakeOff;
         }
         #endregion
 
@@ -26,6 +27,7 @@ namespace TextGameEngine.Env
         public List<Item> Items { get; set; }
         public List<Equipment> Equipment { get; set; }
         public string ThankYouString { get; set; }
+        public int PercentTakeOff { get; set; }
         #endregion
 
         #region Prints

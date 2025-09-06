@@ -44,7 +44,7 @@ game.Player.Equipment.Add(new Equipment(name: "Leather Armor",type:EquipmentType
 game.Player.Equipment.Add(new Equipment(name: "Leather Gloves", type: EquipmentType.Arms, isEquiped: true, healthBoost: 2, damageReductionBoost: 1, hitBoost:5));
 game.Player.Equipment.Add(new Equipment(name: "Leather Boots", type: EquipmentType.Legs, isEquiped: true, dodgeBoost: 5));
 game.Player.Equipment.Add(new Equipment(name: "Bronze Sword", type: EquipmentType.Weapon, isEquiped: true, minDamageBoost:4500,maxDamageBoost:5000));
-game.Player.Equipment.Add(new Equipment(name: "Iron Sword", type: EquipmentType.Weapon, isEquiped: false, minDamageBoost: 1, maxDamageBoost: 3,healthBoost:155));
+game.Player.Equipment.Add(new Equipment(name: "Iron Sword", type: EquipmentType.Weapon, isEquiped: false, minDamageBoost: 1, maxDamageBoost: 3,healthBoost:155,gold:21));
 
 
 game.Player.HealFull();
